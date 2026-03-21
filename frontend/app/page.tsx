@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useTheme } from "@/lib/useTheme";
+import { useAuth } from "@clerk/nextjs";
 
 const SCENARIOS = [
   { value: "General Professional Call", icon: "📞", label: "General Professional Call" },
@@ -14,20 +15,20 @@ const SCENARIOS = [
 ];
 
 const LANGUAGES = [
-  { value: "English",                  code: "us", label: "English" },
-  { value: "Chinese (中文)",           code: "cn", label: "中文" },
-  { value: "Spanish (Español)",        code: "es", label: "Español" },
-  { value: "French (Français)",        code: "fr", label: "Français" },
-  { value: "Japanese (日本語)",        code: "jp", label: "日本語" },
-  { value: "Korean (한국어)",          code: "kr", label: "한국어" },
-  { value: "Portuguese (Português)",   code: "br", label: "Português" },
-  { value: "Arabic (العربية)",         code: "sa", label: "العربية" },
-  { value: "Hindi (हिन्दी)",           code: "in", label: "हिन्दी" },
-  { value: "German (Deutsch)",         code: "de", label: "Deutsch" },
-  { value: "Vietnamese (Tiếng Việt)",  code: "vn", label: "Tiếng Việt" },
-  { value: "Italian (Italiano)",       code: "it", label: "Italiano" },
-  { value: "Russian (Русский)",        code: "ru", label: "Русский" },
-  { value: "Dutch (Nederlands)",       code: "nl", label: "Nederlands" },
+  { value: "English", code: "us", label: "English" },
+  { value: "Chinese (中文)", code: "cn", label: "中文" },
+  { value: "Spanish (Español)", code: "es", label: "Español" },
+  { value: "French (Français)", code: "fr", label: "Français" },
+  { value: "Japanese (日本語)", code: "jp", label: "日本語" },
+  { value: "Korean (한국어)", code: "kr", label: "한국어" },
+  { value: "Portuguese (Português)", code: "br", label: "Português" },
+  { value: "Arabic (العربية)", code: "sa", label: "العربية" },
+  { value: "Hindi (हिन्दी)", code: "in", label: "हिन्दी" },
+  { value: "German (Deutsch)", code: "de", label: "Deutsch" },
+  { value: "Vietnamese (Tiếng Việt)", code: "vn", label: "Tiếng Việt" },
+  { value: "Italian (Italiano)", code: "it", label: "Italiano" },
+  { value: "Russian (Русский)", code: "ru", label: "Русский" },
+  { value: "Dutch (Nederlands)", code: "nl", label: "Nederlands" },
 ];
 
 // Uses flag-icons CSS library — no image requests, works on all platforms including Windows
@@ -52,29 +53,30 @@ type LangPickerSide = "source" | "target" | null;
 
 export default function CallAssistant() {
   const { theme, toggleTheme } = useTheme();
+  const { getToken } = useAuth();
 
   const [isRecording, setIsRecording] = useState(false);
-  const [scenario, setScenario]       = useState("General Professional Call");
-  const [sourceLang, setSourceLang]   = useState("English");
-  const [targetLang, setTargetLang]   = useState("Chinese (中文)");
+  const [scenario, setScenario] = useState("General Professional Call");
+  const [sourceLang, setSourceLang] = useState("English");
+  const [targetLang, setTargetLang] = useState("Chinese (中文)");
   const [showScenarioPicker, setShowScenarioPicker] = useState(false);
-  const [openLangPicker, setOpenLangPicker]         = useState<LangPickerSide>(null);
-  const [isAIListening, setIsAIListening]           = useState(true);
+  const [openLangPicker, setOpenLangPicker] = useState<LangPickerSide>(null);
+  const [isAIListening, setIsAIListening] = useState(true);
   const isAIListeningRef = useRef(true);
 
   const scenarioPickerRef = useRef<HTMLDivElement>(null);
-  const langPickerRef     = useRef<HTMLDivElement>(null);
+  const langPickerRef = useRef<HTMLDivElement>(null);
 
   const [transcript, setTranscript] = useState<string[]>([]);
-  const [summary, setSummary]       = useState<string>("Waiting for audio to summarize...");
+  const [summary, setSummary] = useState<string>("Waiting for audio to summarize...");
   const [translation, setTranslation] = useState<string>("Waiting for audio to translate...");
-  const [replies, setReplies]       = useState<string[]>(["...", "...", "..."]);
+  const [replies, setReplies] = useState<string[]>(["...", "...", "..."]);
 
-  const socketRef       = useRef<WebSocket | null>(null);
+  const socketRef = useRef<WebSocket | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 
-  const sourceLangObj  = LANGUAGES.find(l => l.value === sourceLang)!;
-  const targetLangObj  = LANGUAGES.find(l => l.value === targetLang)!;
+  const sourceLangObj = LANGUAGES.find(l => l.value === sourceLang)!;
+  const targetLangObj = LANGUAGES.find(l => l.value === targetLang)!;
   const currentScenario = SCENARIOS.find(s => s.value === scenario)!;
 
   useEffect(() => {
@@ -96,7 +98,7 @@ export default function CallAssistant() {
       const utterance = new SpeechSynthesisUtterance(lines.length > 1 ? lines[lines.length - 1] : text);
       utterance.rate = 0.9;
       utterance.onstart = () => { setIsAIListening(false); isAIListeningRef.current = false; };
-      utterance.onend   = () => { setIsAIListening(true);  isAIListeningRef.current = true; };
+      utterance.onend = () => { setIsAIListening(true); isAIListeningRef.current = true; };
       window.speechSynthesis.speak(utterance);
     }
   };
@@ -104,14 +106,15 @@ export default function CallAssistant() {
   const startCall = async () => {
     try {
       setTranscript([]);
-      const params = new URLSearchParams({ scenario, source_language: sourceLang, target_language: targetLang });
+      const token = await getToken();
+      const params = new URLSearchParams({ scenario, source_language: sourceLang, target_language: targetLang, token: token ?? "" });
       socketRef.current = new WebSocket(`${process.env.NEXT_PUBLIC_API_URL!.replace('http', 'ws')}/ws/audio?${params}`);
       socketRef.current.onmessage = (event) => {
         const data = JSON.parse(event.data);
         if (data.transcript) setTranscript(prev => [...prev, data.transcript]);
-        if (data.summary)    setSummary(data.summary);
+        if (data.summary) setSummary(data.summary);
         if (data.translation) setTranslation(data.translation);
-        if (data.replies)    setReplies(data.replies);
+        if (data.replies) setReplies(data.replies);
       };
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream);

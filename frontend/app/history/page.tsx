@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useTheme } from "@/lib/useTheme";
+import { useAuth } from "@clerk/nextjs";
 
 type CallRecord = {
   id: number;
@@ -320,6 +321,7 @@ function exportSessionPDF(r: CallRecord) {
 
 export default function HistoryPage() {
   const { theme, toggleTheme } = useTheme();
+  const { getToken } = useAuth();
   const [records, setRecords]         = useState<CallRecord[]>([]);
   const [loading, setLoading]         = useState(true);
   const [expanded, setExpanded]       = useState<number | null>(null);
@@ -334,9 +336,20 @@ export default function HistoryPage() {
   const observerRef  = useRef<IntersectionObserver | null>(null);
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/history`)
-      .then(r => r.json()).then(d => { setRecords(d); setLoading(false); })
-      .catch(() => setLoading(false));
+    (async () => {
+      try {
+        const token = await getToken();
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/history`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const d = await res.json();
+        setRecords(d);
+      } catch {
+        // ignore
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
   const filtered = records.filter(r => {
@@ -398,7 +411,11 @@ export default function HistoryPage() {
   };
   const handleDelete  = async (id: number) => {
     setDeletingId(id);
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/history/${id}`, { method: "DELETE" });
+    const token = await getToken();
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/history/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
     setRecords(prev => prev.filter(r => r.id !== id));
     setDeletingId(null);
     if (expanded === id) setExpanded(null);
