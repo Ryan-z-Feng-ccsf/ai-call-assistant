@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+backend/venv/
+
+# Environment variables — NEVER commit these
+.env
+.env.local
+.env.*.local
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+
+# Database — use Docker volume in production
+*.db
+*.sqlite3
+
+# Next.js build output
+.next/
+out/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker
+*.log

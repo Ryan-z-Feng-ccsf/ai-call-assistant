@@ -1,0 +1,29 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: call-assistant-backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      # These are read from your .env file (never hardcode keys here)
+      - DEEPGRAM_API_KEY=${DEEPGRAM_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      # Point SQLAlchemy at the persistent volume path
+      - DATABASE_URL=sqlite+aiosqlite:////app/data/call_history.db
+    volumes:
+      # Persist the SQLite database outside the container
+      # so data survives docker restart / redeploy
+      - db_data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  db_data:
