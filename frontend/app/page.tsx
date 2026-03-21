@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useTheme } from "@/lib/useTheme";
-import { useAuth, SignIn, SignOutButton, SignInButton, UserButton } from "@clerk/nextjs";
+import { useAuth, SignInButton, UserButton } from "@clerk/nextjs";
 
 const SCENARIOS = [
   { value: "General Professional Call", icon: "📞", label: "General Professional Call" },
@@ -53,7 +53,7 @@ type LangPickerSide = "source" | "target" | null;
 
 export default function CallAssistant() {
   const { theme, toggleTheme } = useTheme();
-  const { getToken } = useAuth();
+  const { getToken, userId } = useAuth();
 
   const [isRecording, setIsRecording] = useState(false);
   const [scenario, setScenario] = useState("General Professional Call");
@@ -453,20 +453,44 @@ export default function CallAssistant() {
       `}</style>
 
       <div className="app-bg">
-        <header className="header glass">
-          <div>
-            <div className="app-title">AI Call Assistant</div>
-            <a href="/history" className="history-link">
-              <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className="history-link-dot" />
-              View History
-            </a>
+        <header className="header glass" style={{ flexDirection: "column", alignItems: "stretch", gap: "20px" }}>
+          
+          {/* 👆 第一层：标题区域 (左) 与 账号/主题控制区 (右) */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+            <div>
+              <div className="app-title">AI Call Assistant</div>
+              <a href="/history" className="history-link">
+                <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="history-link-dot" />
+                View History
+              </a>
+            </div>
+
+            {/* 右上角：主题与登录 */}
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <button suppressHydrationWarning className="btn-theme" onClick={toggleTheme} title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}>
+                {theme === "dark" ? "☀️" : "🌙"}
+              </button>
+
+              {!userId ? (
+                <SignInButton mode="modal">
+                  <button className="btn-theme" style={{ width: "auto", padding: "0 14px", fontSize: "14px", fontWeight: 600 }}>
+                    Sign In
+                  </button>
+                </SignInButton>
+              ) : (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "36px" }}>
+                  <UserButton />
+                </div>
+              )}
+            </div>
           </div>
 
-          <div className="controls">
-
+          {/* 👇 第二层：核心通话控制区 */}
+          <div className="controls" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px" }}>
+            
             {/* Scenario Picker */}
             <div className="scenario-wrap" ref={scenarioPickerRef}>
               <button className="picker-trigger" disabled={isRecording} onClick={() => !isRecording && setShowScenarioPicker(v => !v)}>
@@ -545,25 +569,7 @@ export default function CallAssistant() {
               </button>
             )}
 
-           {/* Theme toggle */}
-            <button suppressHydrationWarning className="btn-theme" onClick={toggleTheme} title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}>
-              {theme === "dark" ? "☀️" : "🌙"}
-            </button>
-
-            {/* Clerk 身份认证 UI */}
-            <SignOutButton>
-              <SignInButton mode="modal">
-                <button className="btn-theme" style={{ width: "auto", padding: "0 14px", fontSize: "14px", fontWeight: 600 }}>
-                  Sign In
-                </button>
-              </SignInButton>
-            </SignOutButton>
-            <SignIn>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "36px", height: "36px" }}>
-                <UserButton />
-              </div>
-            </SignIn>
-
+            {/* Start/Stop Button */}
             <button onClick={isRecording ? stopCall : startCall} className={`btn-main ${isRecording ? "btn-stop" : "btn-start"}`}>
               {isRecording ? "⏹ End Session" : "▶ Start Session"}
             </button>

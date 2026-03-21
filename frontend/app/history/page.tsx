@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useTheme } from "@/lib/useTheme";
-import { useAuth } from "@clerk/nextjs";
+import { useAuth, SignInButton, UserButton } from "@clerk/nextjs";
 
 type CallRecord = {
   id: number;
@@ -321,7 +321,7 @@ function exportSessionPDF(r: CallRecord) {
 
 export default function HistoryPage() {
   const { theme, toggleTheme } = useTheme();
-  const { getToken } = useAuth();
+  const { userId, getToken } = useAuth();
   const [records, setRecords]         = useState<CallRecord[]>([]);
   const [loading, setLoading]         = useState(true);
   const [expanded, setExpanded]       = useState<number | null>(null);
@@ -339,18 +339,41 @@ export default function HistoryPage() {
     (async () => {
       try {
         const token = await getToken();
+        if (!token) {
+          console.warn("No auth token available");
+          setRecords([]);
+          return;
+        }
+
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/history`, {
           headers: { Authorization: `Bearer ${token}` },
         });
+
+        // Strict Check: Did the fetch actually succeed?
+        if (!res.ok) {
+          console.error("Fetch failed with status:", res.status);
+          setRecords([]);
+          return;
+        }
+
         const d = await res.json();
-        setRecords(d);
-      } catch {
-        // ignore
+        
+        // Strict Check: Did the backend return an Array?
+        if (Array.isArray(d)) {
+          setRecords(d);
+        } else {
+          console.error("Expected array but got:", d);
+          setRecords([]);
+        }
+
+      } catch (err) {
+        console.error("Error fetching history:", err);
+        setRecords([]);
       } finally {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [getToken]);
 
   const filtered = records.filter(r => {
     // Text search
@@ -409,16 +432,22 @@ export default function HistoryPage() {
     // 3. Scroll
     sectionRefs.current[key]?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
+  
   const handleDelete  = async (id: number) => {
     setDeletingId(id);
-    const token = await getToken();
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/history/${id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    setRecords(prev => prev.filter(r => r.id !== id));
-    setDeletingId(null);
-    if (expanded === id) setExpanded(null);
+    try {
+      const token = await getToken();
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/history/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setRecords(prev => prev.filter(r => r.id !== id));
+      if (expanded === id) setExpanded(null);
+    } catch (err) {
+      console.error("Failed to delete record:", err);
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   return (
@@ -579,10 +608,6 @@ export default function HistoryPage() {
         .main { flex: 1; padding: 40px 0 80px 48px; min-width: 0; }
 
         /* ── Top bar ── */
-        .top-bar {
-          display: flex; align-items: flex-start; justify-content: space-between;
-          margin-bottom: 40px; gap: 20px; flex-wrap: wrap;
-        }
         .back-link {
           display: inline-flex; align-items: center; gap: 6px;
           font-size: 13px; font-weight: 500; color: var(--text-muted);
@@ -817,7 +842,8 @@ export default function HistoryPage() {
 
           {/* ── Main ── */}
           <main className="main">
-            <div className="top-bar">
+            {/* ── 第一层：标题 与 全局控制 (主题/登录) ── */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "24px", gap: "20px", flexWrap: "wrap" }}>
               <div>
                 <a href="/" className="back-link">
                   <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -829,93 +855,108 @@ export default function HistoryPage() {
                 <div className="page-subtitle">Your past sessions, organized by time</div>
               </div>
 
-              <div className="top-actions">
-                {/* Search */}
-                <div className="search-wrap">
-                  <svg className="search-icon" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                  <input className="search-input" placeholder="Search sessions..." value={search} onChange={e => setSearch(e.target.value)} />
-                </div>
-
-                {/* Date range filter */}
-                <div className="date-range-wrap">
-                  <svg className="date-icon" width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <input
-                    type="date"
-                    className="date-input"
-                    value={dateFrom}
-                    onChange={e => setDateFrom(e.target.value)}
-                    title="From date"
-                  />
-                  <span className="date-sep">–</span>
-                  <input
-                    type="date"
-                    className="date-input"
-                    value={dateTo}
-                    onChange={e => setDateTo(e.target.value)}
-                    title="To date"
-                  />
-                  {(dateFrom || dateTo) && (
-                    <button className="date-clear" onClick={() => { setDateFrom(""); setDateTo(""); }} title="Clear dates">
-                      <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
-
-                {/* Export */}
-                <div className="export-wrap" ref={exportRef}>
-                  <button className="btn-export" onClick={() => setShowExport(v => !v)}>
-                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                    Export
-                  </button>
-                  {showExport && (
-                    <div className="export-menu">
-                      <div className="export-section-label">Data</div>
-                      <button className="export-option" onClick={() => { exportJSON(filtered); setShowExport(false); }}>
-                        <span className="export-option-icon json">{ }</span>
-                        <div>
-                          <div style={{ color: "#fbbf24", fontWeight: 600 }}>JSON</div>
-                          <div style={{ fontSize: 11, color: "var(--text-muted)" }}>Full data</div>
-                        </div>
-                      </button>
-                      <button className="export-option" onClick={() => { exportCSV(filtered); setShowExport(false); }}>
-                        <span className="export-option-icon csv">📊</span>
-                        <div>
-                          <div style={{ color: "#34d399", fontWeight: 600 }}>CSV</div>
-                          <div style={{ fontSize: 11, color: "var(--text-muted)" }}>Spreadsheet</div>
-                        </div>
-                      </button>
-                      <div className="export-divider" />
-                      <div className="export-section-label">Report</div>
-                      <button className="export-option" onClick={() => { exportAllMarkdown(filtered); setShowExport(false); }}>
-                        <span className="export-option-icon md">📄</span>
-                        <div>
-                          <div style={{ color: "#a78bfa", fontWeight: 600 }}>Markdown</div>
-                          <div style={{ fontSize: 11, color: "var(--text-muted)" }}>All sessions</div>
-                        </div>
-                      </button>
-                      <button className="export-option" onClick={() => { exportAllPDF(filtered); setShowExport(false); }}>
-                        <span className="export-option-icon pdf">🖨️</span>
-                        <div>
-                          <div style={{ color: "#f87171", fontWeight: 600 }}>PDF</div>
-                          <div style={{ fontSize: 11, color: "var(--text-muted)" }}>Print / save</div>
-                        </div>
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {/* Theme toggle */}
+              {/* 右上角：主题与登录 */}
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                 <button suppressHydrationWarning className="btn-theme" onClick={toggleTheme} title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}>
                   {theme === "dark" ? "☀️" : "🌙"}
                 </button>
+
+                {!userId ? (
+                  <SignInButton mode="modal">
+                    <button className="btn-theme" style={{ width: "auto", padding: "0 14px", fontSize: "14px", fontWeight: 600 }}>
+                      Sign In
+                    </button>
+                  </SignInButton>
+                ) : (
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "36px" }}>
+                    <UserButton />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ── 第二层：页面工具 (搜索/筛选/导出) ── */}
+            <div className="top-actions" style={{ marginBottom: "40px", width: "100%", flexWrap: "wrap" }}>
+              {/* Search */}
+              <div className="search-wrap">
+                <svg className="search-icon" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input className="search-input" placeholder="Search sessions..." value={search} onChange={e => setSearch(e.target.value)} />
+              </div>
+
+              {/* Date range filter */}
+              <div className="date-range-wrap">
+                <svg className="date-icon" width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <input
+                  type="date"
+                  className="date-input"
+                  value={dateFrom}
+                  onChange={e => setDateFrom(e.target.value)}
+                  title="From date"
+                />
+                <span className="date-sep">–</span>
+                <input
+                  type="date"
+                  className="date-input"
+                  value={dateTo}
+                  onChange={e => setDateTo(e.target.value)}
+                  title="To date"
+                />
+                {(dateFrom || dateTo) && (
+                  <button className="date-clear" onClick={() => { setDateFrom(""); setDateTo(""); }} title="Clear dates">
+                    <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+
+              {/* Export */}
+              <div className="export-wrap" ref={exportRef}>
+                <button className="btn-export" onClick={() => setShowExport(v => !v)}>
+                  <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  Export
+                </button>
+                {showExport && (
+                  <div className="export-menu">
+                    <div className="export-section-label">Data</div>
+                    <button className="export-option" onClick={() => { exportJSON(filtered); setShowExport(false); }}>
+                      <span className="export-option-icon json">{ }</span>
+                      <div>
+                        <div style={{ color: "#fbbf24", fontWeight: 600 }}>JSON</div>
+                        <div style={{ fontSize: 11, color: "var(--text-muted)" }}>Full data</div>
+                      </div>
+                    </button>
+                    <button className="export-option" onClick={() => { exportCSV(filtered); setShowExport(false); }}>
+                      <span className="export-option-icon csv">📊</span>
+                      <div>
+                        <div style={{ color: "#34d399", fontWeight: 600 }}>CSV</div>
+                        <div style={{ fontSize: 11, color: "var(--text-muted)" }}>Spreadsheet</div>
+                      </div>
+                    </button>
+                    <div className="export-divider" />
+                    <div className="export-section-label">Report</div>
+                    <button className="export-option" onClick={() => { exportAllMarkdown(filtered); setShowExport(false); }}>
+                      <span className="export-option-icon md">📄</span>
+                      <div>
+                        <div style={{ color: "#a78bfa", fontWeight: 600 }}>Markdown</div>
+                        <div style={{ fontSize: 11, color: "var(--text-muted)" }}>All sessions</div>
+                      </div>
+                    </button>
+                    <button className="export-option" onClick={() => { exportAllPDF(filtered); setShowExport(false); }}>
+                      <span className="export-option-icon pdf">🖨️</span>
+                      <div>
+                        <div style={{ color: "#f87171", fontWeight: 600 }}>PDF</div>
+                        <div style={{ fontSize: 11, color: "var(--text-muted)" }}>Print / save</div>
+                      </div>
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
