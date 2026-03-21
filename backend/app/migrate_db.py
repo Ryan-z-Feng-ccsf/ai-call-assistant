@@ -1,11 +1,6 @@
 """
-migrate_db.py — 一次性数据库迁移脚本
-为旧表添加 source_language 和 target_language 字段
-
-用法：
-    python migrate_db.py
+migrate_db.py — 添加 user_id 字段迁移脚本
 """
-
 import sqlite3
 import os
 
@@ -13,7 +8,7 @@ DB_PATH = "./call_history.db"
 
 def migrate():
     if not os.path.exists(DB_PATH):
-        print("❌ 找不到 call_history.db，请确认路径是否正确。")
+        print("❌ 找不到 call_history.db")
         return
 
     conn = sqlite3.connect(DB_PATH)
@@ -23,33 +18,18 @@ def migrate():
     columns = [row[1] for row in cur.fetchall()]
     print(f"📋 当前字段: {columns}")
 
-    changed = False
-
-    if "source_language" not in columns:
-        cur.execute("ALTER TABLE call_records ADD COLUMN source_language TEXT DEFAULT 'English'")
-        print("   ➕ 添加 source_language 字段（默认 English）")
-        changed = True
-
-    if "target_language" not in columns:
-        cur.execute("ALTER TABLE call_records ADD COLUMN target_language TEXT DEFAULT 'Chinese (中文)'")
-        print("   ➕ 添加 target_language 字段（默认 Chinese）")
-        changed = True
-
-    if not changed:
-        print("✅ 已是最新结构，无需迁移。")
+    if "user_id" in columns:
+        print("✅ user_id 字段已存在，无需迁移。")
         conn.close()
         return
 
+    # 添加 user_id，旧记录设为 "legacy_user"
+    cur.execute("ALTER TABLE call_records ADD COLUMN user_id TEXT DEFAULT 'legacy_user'")
     conn.commit()
-
-    cur.execute("PRAGMA table_info(call_records)")
-    new_columns = [row[1] for row in cur.fetchall()]
-    print(f"✅ 迁移完成！新字段: {new_columns}")
+    print("✅ 添加 user_id 字段完成，旧记录 user_id = 'legacy_user'")
 
     cur.execute("SELECT COUNT(*) FROM call_records")
-    count = cur.fetchone()[0]
-    print(f"📊 共 {count} 条历史记录已更新。")
-
+    print(f"📊 共 {cur.fetchone()[0]} 条记录已更新。")
     conn.close()
 
 if __name__ == "__main__":

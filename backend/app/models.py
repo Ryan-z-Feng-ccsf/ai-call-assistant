@@ -8,9 +8,10 @@ class CallRecord(Base):
     __tablename__ = "call_records"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String(120), index=True, nullable=False)  # Clerk user ID
     scenario = Column(String(100), index=True)
-    source_language = Column(String(80), default="English")          # language being spoken
-    target_language = Column(String(80), default="Chinese (中文)")   # language to translate into
+    source_language = Column(String(80), default="English")
+    target_language = Column(String(80), default="Chinese (中文)")
 
     transcript = Column(Text)
     summary = Column(Text)

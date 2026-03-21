@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ClerkProvider, UserButton, SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
+import { ClerkProvider, UserButton, SignIn, SignOutButton, SignInButton } from "@clerk/nextjs";
 import "./globals.css";
 
 export const metadata: Metadata = {

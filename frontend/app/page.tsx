@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useTheme } from "@/lib/useTheme";
-import { useAuth } from "@clerk/nextjs";
+import { useAuth, SignIn, SignOutButton, SignInButton, UserButton } from "@clerk/nextjs";
 
 const SCENARIOS = [
   { value: "General Professional Call", icon: "📞", label: "General Professional Call" },
@@ -545,10 +545,24 @@ export default function CallAssistant() {
               </button>
             )}
 
-            {/* Theme toggle */}
+           {/* Theme toggle */}
             <button suppressHydrationWarning className="btn-theme" onClick={toggleTheme} title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}>
               {theme === "dark" ? "☀️" : "🌙"}
             </button>
+
+            {/* Clerk 身份认证 UI */}
+            <SignOutButton>
+              <SignInButton mode="modal">
+                <button className="btn-theme" style={{ width: "auto", padding: "0 14px", fontSize: "14px", fontWeight: 600 }}>
+                  Sign In
+                </button>
+              </SignInButton>
+            </SignOutButton>
+            <SignIn>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "36px", height: "36px" }}>
+                <UserButton />
+              </div>
+            </SignIn>
 
             <button onClick={isRecording ? stopCall : startCall} className={`btn-main ${isRecording ? "btn-stop" : "btn-start"}`}>
               {isRecording ? "⏹ End Session" : "▶ Start Session"}

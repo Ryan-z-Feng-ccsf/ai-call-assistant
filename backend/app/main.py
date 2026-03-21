@@ -1,10 +1,13 @@
 import asyncio
 import json
 import os
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
+import httpx
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import uvicorn
 from dotenv import load_dotenv
+import jwt
 
 from services.llm_service import process_audio_transcript
 from deepgram import DeepgramClient, LiveTranscriptionEvents, LiveOptions
@@ -17,26 +20,73 @@ load_dotenv()
 
 app = FastAPI()
 
+# ── Clerk JWT verification ──────────────────────────────────────
+CLERK_PUBLISHABLE_KEY = os.getenv("CLERK_PUBLISHABLE_KEY", "")
+CLERK_SECRET_KEY      = os.getenv("CLERK_SECRET_KEY", "")
 
-# Map display language names → Deepgram language codes
-DEEPGRAM_LANG_CODES: dict[str, str] = {
-    "English": "en-US",
-    "Chinese (中文)": "zh-CN",
-    "Spanish (Español)": "es",
-    "French (Français)": "fr",
-    "Japanese (日本語)": "ja",
-    "Korean (한국어)": "ko",
-    "Portuguese (Português)": "pt",
-    "Arabic (العربية)": "ar",
-    "Hindi (हिन्दी)": "hi",
-    "German (Deutsch)": "de",
-    "Vietnamese (Tiếng Việt)": "vi",
-    "Italian (Italiano)": "it",
-    "Russian (Русский)": "ru",
-    "Dutch (Nederlands)": "nl",
-}
+security = HTTPBearer()
+
+async def get_clerk_public_keys():
+    """Fetch Clerk's JWKS for JWT verification."""
+    # Extract the Clerk domain from the publishable key
+    # pk_test_xxx -> xxx.clerk.accounts.dev
+    import base64
+    try:
+        raw = CLERK_PUBLISHABLE_KEY.split("_")[2]
+        # Add padding
+        padding = 4 - len(raw) % 4
+        raw += "=" * padding
+        domain = base64.b64decode(raw).decode().rstrip("$")
+        jwks_url = f"https://{domain}/.well-known/jwks.json"
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(jwks_url)
+            return resp.json()
+    except Exception as e:
+        print(f"Failed to fetch JWKS: {e}")
+        return None
+
+async def verify_clerk_token(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
+    """Verify Clerk JWT and return user_id."""
+    token = credentials.credentials
+    try:
+        # Decode without verification first to get the header
+        header = jwt.get_unverified_header(token)
+        
+        # Fetch public keys
+        jwks = await get_clerk_public_keys()
+        if not jwks:
+            raise HTTPException(status_code=401, detail="Could not fetch auth keys")
+        
+        # Find the matching key
+        public_key = None
+        for key in jwks.get("keys", []):
+            if key.get("kid") == header.get("kid"):
+                from jwt.algorithms import RSAAlgorithm
+                public_key = RSAAlgorithm.from_jwk(json.dumps(key))
+                break
+        
+        if not public_key:
+            raise HTTPException(status_code=401, detail="Public key not found")
+        
+        # Verify and decode
+        payload = jwt.decode(
+            token,
+            public_key,
+            algorithms=["RS256"],
+            options={"verify_aud": False},
+        )
+        user_id = payload.get("sub")
+        if not user_id:
+            raise HTTPException(status_code=401, detail="No user ID in token")
+        return user_id
+
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError as e:
+        raise HTTPException(status_code=401, detail=f"Invalid token: {e}")
 
 
+# ── Startup ─────────────────────────────────────────────────────
 @app.on_event("startup")
 async def startup_event():
     async with engine.begin() as conn:
@@ -44,9 +94,15 @@ async def startup_event():
         print("🗄️ Database tables created/verified.")
 
 
+# ── CORS ────────────────────────────────────────────────────────
+ALLOWED_ORIGINS = os.getenv(
+    "ALLOWED_ORIGINS",
+    "http://localhost:3000,https://ai-call-assistant-tau.vercel.app"
+).split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -54,17 +110,38 @@ app.add_middleware(
 
 deepgram = DeepgramClient(os.getenv("DEEPGRAM_API_KEY"))
 
+DEEPGRAM_LANG_CODES: dict[str, str] = {
+    "English":              "en-US",
+    "Chinese (中文)":       "zh-CN",
+    "Spanish (Español)":    "es",
+    "French (Français)":    "fr",
+    "Japanese (日本語)":    "ja",
+    "Korean (한국어)":      "ko",
+    "Portuguese (Português)": "pt",
+    "Arabic (العربية)":     "ar",
+    "Hindi (हिन्दी)":       "hi",
+    "German (Deutsch)":     "de",
+    "Vietnamese (Tiếng Việt)": "vi",
+    "Italian (Italiano)":   "it",
+    "Russian (Русский)":    "ru",
+    "Dutch (Nederlands)":   "nl",
+}
 
+
+# ── Health ──────────────────────────────────────────────────────
 @app.get("/health")
 async def health():
     return {"status": "ok"}
 
 
+# ── History ─────────────────────────────────────────────────────
 @app.get("/history")
-async def get_call_history():
+async def get_call_history(user_id: str = Depends(verify_clerk_token)):
     async with SessionLocal() as db:
         result = await db.execute(
-            select(CallRecord).order_by(CallRecord.created_at.desc())
+            select(CallRecord)
+            .where(CallRecord.user_id == user_id)   # ← only this user's records
+            .order_by(CallRecord.created_at.desc())
         )
         records = result.scalars().all()
         return [
@@ -84,9 +161,14 @@ async def get_call_history():
 
 
 @app.delete("/history/{record_id}")
-async def delete_call_record(record_id: int):
+async def delete_call_record(record_id: int, user_id: str = Depends(verify_clerk_token)):
     async with SessionLocal() as db:
-        result = await db.execute(select(CallRecord).filter(CallRecord.id == record_id))
+        result = await db.execute(
+            select(CallRecord).filter(
+                CallRecord.id == record_id,
+                CallRecord.user_id == user_id,   # ← can only delete own records
+            )
+        )
         record = result.scalar_one_or_none()
         if record is None:
             raise HTTPException(status_code=404, detail="Record not found")
@@ -95,21 +177,33 @@ async def delete_call_record(record_id: int):
         return {"message": "Record deleted successfully"}
 
 
+# ── WebSocket ────────────────────────────────────────────────────
 @app.websocket("/ws/audio")
 async def audio_stream_endpoint(
     websocket: WebSocket,
     scenario: str = "General Professional Call",
-    source_language: str = "English",  # language being spoken
-    target_language: str = "Chinese (中文)",  # language to translate into
+    source_language: str = "English",
+    target_language: str = "Chinese (中文)",
+    token: str = "",        # Clerk session token passed as query param
 ):
+    # Verify token before accepting
+    if not token:
+        await websocket.close(code=4001)
+        return
+
+    try:
+        # Re-use the same verification logic
+        class FakeCreds:
+            credentials = token
+        user_id = await verify_clerk_token(FakeCreds())
+    except HTTPException:
+        await websocket.close(code=4001)
+        return
+
     await websocket.accept()
-    print(
-        f"🟢 Connected | Scenario: {scenario} | {source_language} → {target_language}"
-    )
+    print(f"🟢 Connected | User: {user_id} | {source_language} → {target_language}")
 
-    # Look up the Deepgram language code for the source language
     dg_lang = DEEPGRAM_LANG_CODES.get(source_language, "en-US")
-
     transcript_buffer = ""
 
     try:
@@ -120,25 +214,17 @@ async def audio_stream_endpoint(
             sentence = result.channel.alternatives[0].transcript
             if not sentence:
                 return
-
             if result.is_final:
-                print(f"🎤 Heard ({source_language}): {sentence}")
+                print(f"🎤 Heard: {sentence}")
                 await websocket.send_text(json.dumps({"transcript": sentence}))
                 transcript_buffer += sentence + " "
-
                 if len(transcript_buffer.strip()) > 15:
-                    print(
-                        f"🧠 Sending to Gemini: {source_language} → {target_language}"
-                    )
                     ml_response = await process_audio_transcript(
-                        transcript_buffer.strip(),
-                        scenario,
-                        source_language,
-                        target_language,
+                        transcript_buffer.strip(), scenario, source_language, target_language
                     )
-
                     async with SessionLocal() as db:
                         new_record = CallRecord(
+                            user_id=user_id,
                             scenario=scenario,
                             source_language=source_language,
                             target_language=target_language,
@@ -150,10 +236,8 @@ async def audio_stream_endpoint(
                         db.add(new_record)
                         await db.commit()
                         print("💾 Record saved.")
-
                     ml_response.pop("transcript", None)
                     await websocket.send_text(json.dumps(ml_response))
-                    print("📡 Sent ML package to frontend.")
                     transcript_buffer = ""
 
         async def on_error(self, error, **kwargs):
@@ -162,17 +246,10 @@ async def audio_stream_endpoint(
         dg_connection.on(LiveTranscriptionEvents.Transcript, on_message)
         dg_connection.on(LiveTranscriptionEvents.Error, on_error)
 
-        options = LiveOptions(
-            model="nova-3",
-            language=dg_lang,  # dynamically set based on source language
-            smart_format=True,
-        )
-
+        options = LiveOptions(model="nova-3", language=dg_lang, smart_format=True)
         if not await dg_connection.start(options):
             print("🔴 Failed to connect to Deepgram.")
             return
-
-        print(f"🟢 Deepgram listening in '{dg_lang}'...")
 
         while True:
             data = await websocket.receive_bytes()
