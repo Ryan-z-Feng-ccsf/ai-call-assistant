@@ -216,6 +216,45 @@ export default function CallAssistant() {
           --swap-bg-hover:     rgba(79,70,229,0.08);
         }
 
+
+        html[data-theme="cyber"] {
+          --bg-page:           #000d10;
+          --bg-glass:          rgba(0,20,28,0.75);
+          --bg-glass-strong:   rgba(0,220,210,0.06);
+          --bg-control:        rgba(0,220,210,0.07);
+          --bg-control-hover:  rgba(0,220,210,0.14);
+          --bg-popover:        rgba(0,12,18,0.95);
+          --bg-option-hover:   rgba(0,220,210,0.08);
+          --bg-option-active:  rgba(0,220,210,0.15);
+          --bg-transcript:     rgba(0,220,210,0.02);
+          --bg-reply:          rgba(0,220,210,0.05);
+          --bg-reply-hover:    rgba(0,220,210,0.1);
+          --border-glass:      rgba(0,220,210,0.18);
+          --border-subtle:     rgba(0,220,210,0.1);
+          --border-option:     rgba(0,220,210,0.08);
+          --text-primary:      #e0fffe;
+          --text-secondary:    #7ececa;
+          --text-muted:        #4a9a9a;
+          --text-faint:        #2d6a6a;
+          --accent:            #00ddd0;
+          --accent-text:       #00ddd0;
+          --summary-bg:        linear-gradient(145deg, rgba(0,20,28,0.9) 0%, rgba(0,40,50,0.7) 100%);
+          --summary-border:    rgba(0,220,210,0.15);
+          --translation-color: #00ddd0;
+          --section-label:     #00ddd0;
+          --dot-idle:          #2d6a6a;
+          --dot-active:        #00ddd0;
+          --gradient-bg:       linear-gradient(135deg, #000d10 0%, #001a1f 30%, #000f14 60%, #001015 100%);
+          --orb-a:             rgba(0,220,210,0.12);
+          --orb-b:             rgba(0,180,170,0.08);
+          --reply-top-color:   #e0fffe;
+          --reply-bot-color:   #4a9a9a;
+          --swap-border-l:     rgba(0,220,210,0.1);
+          --swap-border-r:     rgba(0,220,210,0.1);
+          --swap-bg:           rgba(0,220,210,0.04);
+          --swap-bg-hover:     rgba(0,220,210,0.12);
+        }
+
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
           font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
@@ -450,6 +489,36 @@ export default function CallAssistant() {
         .reply-bottom { font-size: 13px; color: var(--reply-bot-color); font-weight: 400; }
         .speaker-icon { flex-shrink: 0; margin-left: 12px; color: var(--text-faint); opacity: 0; transition: color 0.2s, opacity 0.2s; }
         .reply-btn:hover .speaker-icon { opacity: 1; color: var(--accent); }
+
+        /* ── UserButton Styling ── */
+        .cl-userButtonTrigger {
+          width: 36px !important; height: 36px !important;
+          border-radius: 11px !important;
+          border: 1px solid var(--border-glass) !important;
+          background: var(--bg-control) !important;
+          transition: all 0.2s !important;
+        }
+        .cl-userButtonTrigger:hover { background: var(--bg-control-hover) !important; }
+        .cl-avatarBox { width: 28px !important; height: 28px !important; border-radius: 7px !important; }
+        .cl-userButtonPopoverCard {
+          background: var(--bg-popover) !important;
+          border: 1px solid var(--border-glass) !important;
+          border-radius: 16px !important;
+          box-shadow: 0 16px 48px rgba(0,0,0,0.3) !important;
+          backdrop-filter: blur(24px) !important;
+        }
+        .cl-userButtonPopoverActionButton {
+          color: var(--text-primary) !important;
+          border-radius: 10px !important;
+        }
+        .cl-userButtonPopoverActionButton:hover { background: var(--bg-option-hover) !important; }
+        .cl-userButtonPopoverActionButtonText { color: var(--text-primary) !important; }
+        .cl-userButtonPopoverActionButtonIcon { color: var(--text-muted) !important; }
+        .cl-userButtonPopoverFooter { display: none !important; }
+        .cl-userPreviewMainIdentifier { color: var(--text-primary) !important; font-weight: 600 !important; }
+        .cl-userPreviewSecondaryIdentifier { color: var(--text-muted) !important; }
+        .cl-userButtonPopoverActionsSeparator { background: var(--border-subtle) !important; }
+
       `}</style>
 
       <div className="app-bg">
@@ -470,8 +539,8 @@ export default function CallAssistant() {
 
             {/* 右上角：主题与登录 */}
             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-              <button suppressHydrationWarning className="btn-theme" onClick={toggleTheme} title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}>
-                {theme === "dark" ? "☀️" : "🌙"}
+              <button suppressHydrationWarning className="btn-theme" onClick={toggleTheme} title={`Switch to ${theme === "dark" ? "light" : theme === "light" ? "cyber" : "dark"} mode`}>
+                {theme === "dark" ? "☀️" : theme === "light" ? "🌙" : "⚡"}
               </button>
 
               {!userId ? (
@@ -482,7 +551,50 @@ export default function CallAssistant() {
                 </SignInButton>
               ) : (
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "36px" }}>
-                  <UserButton />
+                  <UserButton 
+  appearance={{
+    
+    variables: {
+      // 全局变量绑定你的 CSS 变量
+      colorPrimary: "var(--accent)",
+      colorText: "var(--text-primary)",
+      colorTextSecondary: "var(--text-muted)",
+      colorBackground: "var(--bg-popover)",
+    },
+    elements: {
+      // 强制面板背景和边框使用你的主题色
+      userButtonPopoverCard: {
+        backgroundColor: "var(--bg-popover)",
+        backdropFilter: "blur(24px)",
+        border: "1px solid var(--border-glass)",
+        boxShadow: "0 16px 48px rgba(0,0,0,0.2)",
+      },
+      // 名字颜色
+      userPreviewMainIdentifier: {
+        color: "var(--text-primary)",
+        fontWeight: "600",
+      },
+      // 邮箱颜色
+      userPreviewSecondaryIdentifier: {
+        color: "var(--text-muted)",
+      },
+      // 菜单按钮文字（Manage account, Sign out）
+      userButtonPopoverActionButtonText: {
+        color: "var(--text-primary)",
+      },
+      // 菜单按钮图标
+      userButtonPopoverActionButtonIcon: {
+        color: "var(--text-muted)",
+      },
+      // 菜单悬浮效果
+      userButtonPopoverActionButton: {
+        "&:hover": {
+          backgroundColor: "var(--bg-option-hover)",
+        }
+      }
+    }
+  }}
+/>
                 </div>
               )}
             </div>
