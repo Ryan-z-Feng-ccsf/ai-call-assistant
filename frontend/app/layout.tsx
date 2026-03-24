@@ -22,12 +22,14 @@ export default function RootLayout({
                 (function() {
                   try {
                     var theme = localStorage.getItem('app-theme');
-                    if (theme === 'light' || theme === 'dark') {
-                      document.documentElement.setAttribute('data-theme', theme);
-                    } else {
-                      document.documentElement.setAttribute('data-theme', 'dark');
-                    }
-                  } catch (e) {}
+                    var valid = ['dark', 'light', 'cyber'];
+                    document.documentElement.setAttribute(
+                      'data-theme',
+                      valid.indexOf(theme) !== -1 ? theme : 'cyber'
+                    );
+                  } catch (e) {
+                    document.documentElement.setAttribute('data-theme', 'cyber');
+                  }
                 })();
               `,
             }}

@@ -540,7 +540,7 @@ export default function CallAssistant() {
             {/* 右上角：主题与登录 */}
             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
               <button suppressHydrationWarning className="btn-theme" onClick={toggleTheme} title={`Switch to ${theme === "dark" ? "light" : theme === "light" ? "cyber" : "dark"} mode`}>
-                {theme === "dark" ? "☀️" : theme === "light" ? "🌙" : "⚡"}
+                {theme === "dark" ? "🌙" : theme === "light" ? "☀️" : "⚡"}
               </button>
 
               {!userId ? (

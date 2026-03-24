@@ -5,10 +5,10 @@ export type Theme = "dark" | "light" | "cyber";
 
 export function useTheme() {
   const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof window === "undefined") return "dark";
+    if (typeof window === "undefined") return "cyber";
     const fromDom = document.documentElement.getAttribute("data-theme") as Theme | null;
     if (fromDom === "light" || fromDom === "dark" || fromDom === "cyber") return fromDom;
-    return "dark";
+    return "cyber";
   });
 
   useEffect(() => {
@@ -17,7 +17,7 @@ export function useTheme() {
   }, [theme]);
 
   const toggleTheme = () =>
-    setTheme(t => t === "dark" ? "light" : t === "light" ? "cyber" : "dark");
+    setTheme(t => t === "cyber" ? "dark" : t === "dark" ? "light" : "cyber");
 
   return { theme, toggleTheme };
 }
