@@ -522,6 +522,40 @@ export default function HistoryPage() {
           --spinner-track:   #e4e4e7;
         }
 
+
+        html[data-theme="cyber"] {
+          --bg:              #000d10;
+          --bg-subtle:       #001015;
+          --bg-card:         rgba(0,220,210,0.04);
+          --bg-card-hover:   rgba(0,220,210,0.08);
+          --bg-input:        rgba(0,220,210,0.05);
+          --bg-btn:          rgba(0,220,210,0.06);
+          --bg-btn-hover:    rgba(0,220,210,0.12);
+          --bg-menu:         #001a20;
+          --bg-sidebar-hover: rgba(0,220,210,0.06);
+          --bg-sidebar-active: rgba(0,220,210,0.15);
+          --border:          #002a30;
+          --border-mid:      #003a40;
+          --border-high:     #005a60;
+          --text-primary:    #e0fffe;
+          --text-secondary:  #7ececa;
+          --text-dim:        #4a9a9a;
+          --text-muted:      #2d7a7a;
+          --text-faint:      #1d5a5a;
+          --accent:          #00ddd0;
+          --accent-light:    #00ddd0;
+          --accent-mid:      #00c4b8;
+          --accent-danger:   #ff6b6b;
+          --accent-danger-bg: rgba(255,107,107,0.1);
+          --translation:     #00ddd0;
+          --dot-active:      #00ddd0;
+          --dot-inactive:    #1d5a5a;
+          --glow-a:          rgba(0,220,210,0.12);
+          --glow-b:          rgba(0,180,170,0.08);
+          --glow-c:          rgba(0,150,140,0.05);
+          --spinner-track:   #002a30;
+        }
+
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
           font-family: 'DM Sans', -apple-system, sans-serif;
@@ -661,6 +695,7 @@ export default function HistoryPage() {
           opacity: 0.4; cursor: pointer; filter: var(--calendar-filter, none);
         }
         html[data-theme="dark"] { --calendar-filter: invert(1); }
+        html[data-theme="cyber"] { --calendar-filter: invert(1) sepia(1) saturate(2) hue-rotate(155deg); }
         .date-sep { font-size: 12px; color: var(--text-faint); user-select: none; }
         .date-clear {
           display: flex; align-items: center; justify-content: center;
@@ -857,8 +892,8 @@ export default function HistoryPage() {
 
               {/* 右上角：主题与登录 */}
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <button suppressHydrationWarning className="btn-theme" onClick={toggleTheme} title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}>
-                  {theme === "dark" ? "☀️" : "🌙"}
+                <button suppressHydrationWarning className="btn-theme" onClick={toggleTheme} title={`Switch to ${theme === "dark" ? "light" : theme === "light" ? "cyber" : "dark"} mode`}>
+                  {theme === "dark" ? "🌙" : theme === "light" ? "☀️" : "⚡"}
                 </button>
 
                 {!userId ? (
