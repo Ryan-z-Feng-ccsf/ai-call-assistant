@@ -53,20 +53,20 @@ function getFlag(lang: string) { return LANG_FLAGS[lang] ?? "🌐"; }
 
 function groupRecords(records: CallRecord[]): Group[] {
   const now = new Date();
-  const today     = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
-  const weekAgo   = new Date(today); weekAgo.setDate(today.getDate() - 7);
-  const monthAgo  = new Date(today); monthAgo.setDate(today.getDate() - 30);
+  const weekAgo = new Date(today); weekAgo.setDate(today.getDate() - 7);
+  const monthAgo = new Date(today); monthAgo.setDate(today.getDate() - 30);
   const buckets: Record<string, CallRecord[]> = {};
 
   for (const r of records) {
     const d = new Date(r.date.replace(" ", "T"));
     const day = new Date(d.getFullYear(), d.getMonth(), d.getDate());
     let key: string;
-    if (day >= today)          key = "Today";
+    if (day >= today) key = "Today";
     else if (day >= yesterday) key = "Yesterday";
-    else if (day >= weekAgo)   key = "Previous 7 Days";
-    else if (day >= monthAgo)  key = "Previous 30 Days";
+    else if (day >= weekAgo) key = "Previous 7 Days";
+    else if (day >= monthAgo) key = "Previous 30 Days";
     else key = d.toLocaleString("en-US", { month: "long", year: "numeric" });
     if (!buckets[key]) buckets[key] = [];
     buckets[key].push(r);
@@ -90,9 +90,9 @@ function exportJSON(records: CallRecord[]) {
 }
 
 function exportCSV(records: CallRecord[]) {
-  const headers = ["ID","Date","Scenario","Source Language","Target Language","Summary","Transcript","Translation"];
+  const headers = ["ID", "Date", "Scenario", "Source Language", "Target Language", "Summary", "Transcript", "Translation"];
   const rows = records.map(r => [r.id, r.date, `"${r.scenario}"`, r.source_language, r.target_language,
-    `"${(r.summary ?? "").replace(/"/g,'""')}"`, `"${(r.transcript ?? "").replace(/"/g,'""')}"`, `"${(r.translation ?? "").replace(/"/g,'""')}"`]);
+  `"${(r.summary ?? "").replace(/"/g, '""')}"`, `"${(r.transcript ?? "").replace(/"/g, '""')}"`, `"${(r.translation ?? "").replace(/"/g, '""')}"`]);
   const blob = new Blob([[headers.join(","), ...rows.map(r => r.join(","))].join("\n")], { type: "text/csv" });
   const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: `call-history-${new Date().toISOString().slice(0, 10)}.csv` });
   a.click();
@@ -133,7 +133,7 @@ ${sections}
   const blob = new Blob([md], { type: "text/markdown" });
   const a = Object.assign(document.createElement("a"), {
     href: URL.createObjectURL(blob),
-    download: `call-history-${new Date().toISOString().slice(0,10)}.md`,
+    download: `call-history-${new Date().toISOString().slice(0, 10)}.md`,
   });
   a.click();
 }
@@ -142,7 +142,7 @@ function exportAllPDF(records: CallRecord[]) {
   const sections = records.map(r => {
     const replies = (r.replies ?? []).map((rep, i) => {
       const parts = rep.split("\n").map(p => p.trim()).filter(Boolean);
-      return `<div class="reply"><span class="reply-num">${i+1}</span><div><div class="reply-native">${parts[0] ?? rep}</div>${parts[1] ? `<div class="reply-en">${parts[1]}</div>` : ""}</div></div>`;
+      return `<div class="reply"><span class="reply-num">${i + 1}</span><div><div class="reply-native">${parts[0] ?? rep}</div>${parts[1] ? `<div class="reply-en">${parts[1]}</div>` : ""}</div></div>`;
     }).join("");
     return `
     <div class="session">
@@ -152,7 +152,7 @@ function exportAllPDF(records: CallRecord[]) {
       </div>
       <div class="block">
         <div class="block-label">📝 Transcript</div>
-        <div class="transcript">${(r.transcript ?? "—").replace(/\n/g,"<br>")}</div>
+        <div class="transcript">${(r.transcript ?? "—").replace(/\n/g, "<br>")}</div>
       </div>
       <div class="two-col">
         <div class="block">
@@ -246,7 +246,7 @@ ${replies || "_No replies_"}
   const blob = new Blob([md], { type: "text/markdown" });
   const a = Object.assign(document.createElement("a"), {
     href: URL.createObjectURL(blob),
-    download: `session-${r.id}-${r.date.slice(0,10)}.md`,
+    download: `session-${r.id}-${r.date.slice(0, 10)}.md`,
   });
   a.click();
 }
@@ -320,20 +320,20 @@ function exportSessionPDF(r: CallRecord) {
 }
 
 export default function HistoryPage() {
-  const { theme, toggleTheme } = useTheme();
+  const { theme, toggleTheme, mounted } = useTheme();
   const { userId, getToken } = useAuth();
-  const [records, setRecords]         = useState<CallRecord[]>([]);
-  const [loading, setLoading]         = useState(true);
-  const [expanded, setExpanded]       = useState<number | null>(null);
+  const [records, setRecords] = useState<CallRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [expanded, setExpanded] = useState<number | null>(null);
   const [activeGroup, setActiveGroup] = useState<string>("");
-  const [showExport, setShowExport]   = useState(false);
-  const [deletingId, setDeletingId]   = useState<number | null>(null);
-  const [search, setSearch]           = useState("");
-  const [dateFrom, setDateFrom]       = useState("");  // "YYYY-MM-DD"
-  const [dateTo, setDateTo]           = useState("");  // "YYYY-MM-DD"
-  const exportRef    = useRef<HTMLDivElement>(null);
-  const sectionRefs  = useRef<Record<string, HTMLElement | null>>({});
-  const observerRef  = useRef<IntersectionObserver | null>(null);
+  const [showExport, setShowExport] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [search, setSearch] = useState("");
+  const [dateFrom, setDateFrom] = useState("");  // "YYYY-MM-DD"
+  const [dateTo, setDateTo] = useState("");  // "YYYY-MM-DD"
+  const exportRef = useRef<HTMLDivElement>(null);
+  const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
+  const observerRef = useRef<IntersectionObserver | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -357,7 +357,7 @@ export default function HistoryPage() {
         }
 
         const d = await res.json();
-        
+
         // Strict Check: Did the backend return an Array?
         if (Array.isArray(d)) {
           setRecords(d);
@@ -380,14 +380,14 @@ export default function HistoryPage() {
     if (search.trim()) {
       const q = search.toLowerCase();
       const textMatch = r.scenario?.toLowerCase().includes(q) || r.summary?.toLowerCase().includes(q) ||
-             r.transcript?.toLowerCase().includes(q) || r.source_language?.toLowerCase().includes(q) ||
-             r.target_language?.toLowerCase().includes(q);
+        r.transcript?.toLowerCase().includes(q) || r.source_language?.toLowerCase().includes(q) ||
+        r.target_language?.toLowerCase().includes(q);
       if (!textMatch) return false;
     }
     // Date range — r.date is "YYYY-MM-DD HH:MM", slice to "YYYY-MM-DD" for comparison
     const recDate = r.date?.slice(0, 10) ?? "";
     if (dateFrom && recDate < dateFrom) return false;
-    if (dateTo   && recDate > dateTo)   return false;
+    if (dateTo && recDate > dateTo) return false;
     return true;
   });
 
@@ -432,8 +432,8 @@ export default function HistoryPage() {
     // 3. Scroll
     sectionRefs.current[key]?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
-  
-  const handleDelete  = async (id: number) => {
+
+  const handleDelete = async (id: number) => {
     setDeletingId(id);
     try {
       const token = await getToken();
@@ -892,8 +892,13 @@ export default function HistoryPage() {
 
               {/* 右上角：主题与登录 */}
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <button suppressHydrationWarning className="btn-theme" onClick={toggleTheme} title={`Switch to ${theme === "dark" ? "light" : theme === "light" ? "cyber" : "dark"} mode`}>
-                  {theme === "dark" ? "🌙" : theme === "light" ? "☀️" : "⚡"}
+                <button
+                  className="btn-theme"
+                  onClick={toggleTheme}
+                  title={`Switch to ${theme === "dark" ? "light" : theme === "light" ? "cyber" : "dark"} mode`}
+                >
+                  {/* 在客户端还没挂载完之前，先显示透明或默认图标，挂载后再显示真实图标 */}
+                  {!mounted ? "⚡" : theme === "dark" ? "🌙" : theme === "light" ? "☀️" : "⚡"}
                 </button>
 
                 {!userId ? (
@@ -1025,10 +1030,10 @@ export default function HistoryPage() {
                 </div>
 
                 {group.records.map(record => {
-                  const isOpen   = expanded === record.id;
-                  const icon     = SCENARIO_ICONS[record.scenario] ?? "📞";
-                  const srcFlag  = getFlag(record.source_language ?? "English");
-                  const tgtFlag  = getFlag(record.target_language ?? "Chinese (中文)");
+                  const isOpen = expanded === record.id;
+                  const icon = SCENARIO_ICONS[record.scenario] ?? "📞";
+                  const srcFlag = getFlag(record.source_language ?? "English");
+                  const tgtFlag = getFlag(record.target_language ?? "Chinese (中文)");
                   const srcShort = (record.source_language ?? "").split(" ")[0];
                   const tgtShort = (record.target_language ?? "").split(" ")[0];
 
