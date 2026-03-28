@@ -131,7 +131,7 @@ graph TD
 
 ### 1. Clone the Repository
 ```bash
-git clone [https://github.com/Ryan-z-Feng-ccsf/ai-call-assistant.git](https://github.com/Ryan-z-Feng-ccsf/ai-call-assistant.git)
+git clone https://github.com/Ryan-z-Feng-ccsf/ai-call-assistant.git
 cd ai-call-assistant
 ```
 
