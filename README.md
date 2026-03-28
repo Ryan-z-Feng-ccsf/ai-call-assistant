@@ -28,17 +28,6 @@ This project strictly adheres to a separation of concerns, utilizing a concurren
 2. **The Proxy Engine (FastAPI):** Receives audio chunks and proxies them to Deepgram's live endpoint for sub-second transcription.
 3. **The AI Brain (Google Gemini):** Processes full sentences to generate structured JSON payloads (Summaries, Translations, Replies).
 4. **Data Persistence (SQLAlchemy):** Asynchronously commits session metadata to a relational database.
-
-%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#1a1a1b', 'edgeLabelBackground':'#1a1a1b', 'tertiaryColor': '#1a1a1b'}}}%%
-graph TD
-    %% Define Nodes
-    User("👤 User<br/>(Browser / Client)")
-    Vercel("Front-end<br/>(Next.js on Vercel)")
-    DNS("🌐 DNS / Domain<br/>(e.g., Cloudflare)")
-    DO("Back-end<br/>(FastAPI on DigitalOcean)")
-    SQLite[("🗄️ Database<br/>(SQLite / Volume)")]
-    Deepgram("🎤 STT Engine<br/>(Deepgram)")
-    Gemini("🧠 AI Brain<br/>(Gemini)")
     
 ## System Architecture
 
