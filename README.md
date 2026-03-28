@@ -33,7 +33,8 @@ graph TD
     SQLite[("🗄️ Database<br/>(SQLite / Volume)")]
     Deepgram("🎤 STT Engine<br/>(Deepgram)")
     Gemini("🧠 AI Brain<br/>(Gemini)")
-
+    
+```mermaid
     %% Define Subgraphs
     subgraph "Public Internet"
         User
@@ -84,7 +85,7 @@ graph TD
     linkStyle default stroke:#888,stroke-width:1px;
     linkStyle 1,4,5,8,9 stroke:#66aaff,stroke-width:2px; %% Key User Flows
     linkStyle 0,3,7 stroke:#888,stroke-width:1px,stroke-dasharray: 3 3; %% Secondary/Internal Flows
-    
+```  
 ## 🛠️ Tech Stack
 
 **Frontend**
