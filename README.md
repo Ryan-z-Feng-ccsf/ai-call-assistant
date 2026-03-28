@@ -34,7 +34,22 @@ graph TD
     Deepgram("🎤 STT Engine<br/>(Deepgram)")
     Gemini("🧠 AI Brain<br/>(Gemini)")
     
+## System Architecture
+
+The application follows a decoupled architecture, optimizing for both fast static asset delivery and low-latency real-time communication. 
+
 ```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#1a1a1b', 'edgeLabelBackground':'#1a1a1b', 'tertiaryColor': '#1a1a1b'}}}%%
+graph TD
+    %% Define Nodes
+    User("👤 User (Browser / Client)")
+    Vercel("Front-end (Next.js on Vercel)")
+    DNS("🌐 DNS / Domain (e.g., Cloudflare)")
+    DO("Back-end (FastAPI on DigitalOcean)")
+    SQLite[("🗄️ Database (SQLite / Volume)")]
+    Deepgram("🎤 STT Engine (Deepgram)")
+    Gemini("🧠 AI Brain (Gemini)")
+
     %% Define Subgraphs
     subgraph "Public Internet"
         User
@@ -53,20 +68,20 @@ graph TD
     end
 
     %% Define Edges and Labels
-    User -.->|1. Page Load (HTTPS)| DNS
-    DNS ==>|A. Forward Request| Vercel
-    Vercel -- "B. Serve Static Assets (HTML/CSS/JS)" --> User
+    User -.->|"1. Page Load (HTTPS)"| DNS
+    DNS ==>|"A. Forward Request"| Vercel
+    Vercel -->|"B. Serve Static Assets (HTML/CSS/JS)"| User
 
-    User ==>|2. Audio Stream (WSS)| DO
-    DO ==>|C. Proxy Audio chunks| Deepgram
-    Deepgram -.->|D. Transcribed Text| DO
-    DO -.->|3. Real-time Text| User
+    User ==>|"2. Audio Stream (WSS)"| DO
+    DO ==>|"C. Proxy Audio chunks"| Deepgram
+    Deepgram -.->|"D. Transcribed Text"| DO
+    DO -.->|"3. Real-time Text"| User
 
-    DO ==>|E. Process Transcript| Gemini
-    Gemini -.->|F. Summary & Translation| DO
-    DO -- "4. AI Insights" --> User
+    DO ==>|"E. Process Transcript"| Gemini
+    Gemini -.->|"F. Summary & Translation"| DO
+    DO -->|"4. AI Insights"| User
     
-    DO <==>|G. Async Read/Write| SQLite
+    DO <==>|"G. Async Read/Write"| SQLite
 
     %% Styling
     classDef plain fill:#2d2d2d,stroke:#555,stroke-width:1px,color:#eee;
@@ -83,9 +98,10 @@ graph TD
 
     %% Link Styles
     linkStyle default stroke:#888,stroke-width:1px;
-    linkStyle 1,4,5,8,9 stroke:#66aaff,stroke-width:2px; %% Key User Flows
-    linkStyle 0,3,7 stroke:#888,stroke-width:1px,stroke-dasharray: 3 3; %% Secondary/Internal Flows
-```  
+    linkStyle 1,4,5,8,9 stroke:#66aaff,stroke-width:2px; 
+    linkStyle 0,3,7 stroke:#888,stroke-width:1px,stroke-dasharray: 3 3;
+```
+
 ## 🛠️ Tech Stack
 
 **Frontend**
@@ -160,7 +176,9 @@ npm run dev
 ```
 The UI will be accessible at http://localhost:3000.
 
+
 🌍 Production Deployment
+
 This application is designed for cloud-native deployment:
 
 Frontend: Deployed on Vercel with environment variables pointing to the production API.
