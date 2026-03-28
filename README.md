@@ -4,6 +4,12 @@
 
 AI Call Assistant captures live audio, performs ultra-low latency Speech-to-Text (STT) transcription, and leverages Generative AI to provide instant bilingual summaries, translations, and actionable smart replies.
 
+<p align="center">
+  <img width="32%" alt="Theme 1" src="https://github.com/user-attachments/assets/8075f1dc-7f90-4a80-a672-20aa48d1560f" />
+  <img width="32%" alt="Theme 2" src="https://github.com/user-attachments/assets/f42c8632-86d4-4292-ad5c-fdc2a2868a95" />
+  <img width="32%" alt="Theme 3" src="https://github.com/user-attachments/assets/4e6ca6ba-9900-41f6-806e-0b96cf415c78" />
+</p>
+
 ## ✨ Key Features
 
 * **Ultra-Low Latency Streaming:** Real-time bidirectional audio streaming via WebSockets.
@@ -177,7 +183,7 @@ npm run dev
 The UI will be accessible at http://localhost:3000.
 
 
-🌍 Production Deployment
+## 🌍 Production Deployment
 
 This application is designed for cloud-native deployment:
 
@@ -187,7 +193,7 @@ Backend: Containerized via Docker and deployed on a DigitalOcean Droplet.
 
 Security: Caddy handles automatic SSL termination (wss:// and https://) via Let's Encrypt.
 
-📄 License
+## 📄 License
 This project is open-source and available under the MIT License.
 
 
