@@ -108,6 +108,49 @@ graph TD
     linkStyle 0,3,7 stroke:#888,stroke-width:1px,stroke-dasharray: 3 3;
 ```
 
+## 📂 Project Architecture & Directory Structure
+
+The project follows a decoupled client-server architecture.
+
+```text
+ai-call-assistant/
+├── frontend/                     # Next.js Frontend App
+│   ├── app/
+│   │   ├── history/
+│   │   │   └── page.tsx          # Session history & multi-format export interface
+│   │   ├── sign-in/[[...sign-in]]/
+│   │   │   └── page.tsx          # Custom Clerk sign-in page (Cyberpunk theme)
+│   │   ├── sign-up/[[...sign-up]]/
+│   │   │   └── page.tsx          # Custom Clerk sign-up page
+│   │   ├── globals.css           # Global styles & CSS variables (Theme configuration)
+│   │   ├── layout.tsx            # Root layout, ClerkProvider, Sync theme script
+│   │   └── page.tsx              # Main interactive call interface (WebSocket client)
+│   ├── lib/
+│   │   └── useTheme.ts           # Custom React hook for dynamic theme switching
+│   ├── public/
+│   │   └── auth-bg.png           # Authentication background asset
+│   ├── middleware.ts             # Clerk authentication route protection
+│   ├── package.json
+│   └── .env.local                # Frontend secrets (API URL, Clerk Keys)
+│
+├── backend/                      # FastAPI Python Server
+│   ├── app/
+│   │   ├── services/
+│   │   │   └── llm_service.py    # Google GenAI integration (Prompt engineering)
+│   │   ├── main.py               # WebSocket endpoint & HTTP API routes
+│   │   ├── models.py             # SQLAlchemy ORM models (User-isolated CallRecords)
+│   │   ├── database.py           # Database connection & session management
+│   │   ├── migrate_db.py         # DB migration script (Schema updates)
+│   │   ├── Dockerfile            # Multi-stage optimized Docker build
+│   │   ├── docker-compose.yml    # Container orchestration & volume mapping
+│   │   ├── requirements.txt      # Python dependencies
+│   │   └── .env                  # Backend secrets (API Keys, CORS origins)
+│   └── data/                     # Persistent Docker volume mount for database
+│
+├── .gitignore                    # Global git ignore rules
+└── README.md                     # Project documentation
+```
+
 ## 🛠️ Tech Stack
 
 **Frontend**
