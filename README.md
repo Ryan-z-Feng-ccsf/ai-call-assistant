@@ -23,6 +23,68 @@ This project strictly adheres to a separation of concerns, utilizing a concurren
 3. **The AI Brain (Google Gemini):** Processes full sentences to generate structured JSON payloads (Summaries, Translations, Replies).
 4. **Data Persistence (SQLAlchemy):** Asynchronously commits session metadata to a relational database.
 
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#1a1a1b', 'edgeLabelBackground':'#1a1a1b', 'tertiaryColor': '#1a1a1b'}}}%%
+graph TD
+    %% Define Nodes
+    User("👤 User<br/>(Browser / Client)")
+    Vercel("Front-end<br/>(Next.js on Vercel)")
+    DNS("🌐 DNS / Domain<br/>(e.g., Cloudflare)")
+    DO("Back-end<br/>(FastAPI on DigitalOcean)")
+    SQLite[("🗄️ Database<br/>(SQLite / Volume)")]
+    Deepgram("🎤 STT Engine<br/>(Deepgram)")
+    Gemini("🧠 AI Brain<br/>(Gemini)")
+
+    %% Define Subgraphs
+    subgraph "Public Internet"
+        User
+        DNS
+    end
+
+    subgraph "Cloud Infrastructure"
+        Vercel
+        DO
+        SQLite
+    end
+
+    subgraph "AI APIs"
+        Deepgram
+        Gemini
+    end
+
+    %% Define Edges and Labels
+    User -.->|1. Page Load (HTTPS)| DNS
+    DNS ==>|A. Forward Request| Vercel
+    Vercel -- "B. Serve Static Assets (HTML/CSS/JS)" --> User
+
+    User ==>|2. Audio Stream (WSS)| DO
+    DO ==>|C. Proxy Audio chunks| Deepgram
+    Deepgram -.->|D. Transcribed Text| DO
+    DO -.->|3. Real-time Text| User
+
+    DO ==>|E. Process Transcript| Gemini
+    Gemini -.->|F. Summary & Translation| DO
+    DO -- "4. AI Insights" --> User
+    
+    DO <==>|G. Async Read/Write| SQLite
+
+    %% Styling
+    classDef plain fill:#2d2d2d,stroke:#555,stroke-width:1px,color:#eee;
+    classDef db fill:#3b3b3c,stroke:#777,stroke-width:2px,color:#eee,stroke-dasharray: 5 5;
+    classDef api fill:#4a4a4b,stroke:#999,stroke-width:1px,color:#fff,rx:10,ry:10;
+    classDef highlight fill:#1f4f96,stroke:#66aaff,stroke-width:2px,color:#fff;
+    classDef dns fill:#2a6a4a,stroke:#66ccaa,stroke-width:1px,color:#fff;
+
+    class User,Vercel highlight;
+    class DO plain;
+    class SQLite db;
+    class Deepgram,Gemini api;
+    class DNS dns;
+
+    %% Link Styles
+    linkStyle default stroke:#888,stroke-width:1px;
+    linkStyle 1,4,5,8,9 stroke:#66aaff,stroke-width:2px; %% Key User Flows
+    linkStyle 0,3,7 stroke:#888,stroke-width:1px,stroke-dasharray: 3 3; %% Secondary/Internal Flows
+    
 ## 🛠️ Tech Stack
 
 **Frontend**
@@ -60,31 +122,41 @@ cd ai-call-assistant
 Create a .env file in backend/app/:
 
 Code snippet
+```bash
 DEEPGRAM_API_KEY=your_deepgram_api_key
 GEMINI_API_KEY=your_gemini_api_key
 CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
 CLERK_SECRET_KEY=your_clerk_secret_key
 ALLOWED_ORIGINS=http://localhost:3000
+```
+
 Build and spin up the backend container:
 
-Bash
+```bash
 cd backend/app
 docker compose up --build -d
+```
+
 The FastAPI server will be running at http://localhost:8000.
+
 
 ### 3. Frontend Setup
 Create a .env.local file in frontend/:
 
 Code snippet
+```bash
 NEXT_PUBLIC_API_URL=http://localhost:8000
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
 CLERK_SECRET_KEY=your_clerk_secret_key
+```
+
 Install dependencies and run the development server:
 
-Bash
+```bash
 cd frontend
 npm install
 npm run dev
+```
 The UI will be accessible at http://localhost:3000.
 
 🌍 Production Deployment
