@@ -54,7 +54,7 @@ This project strictly adheres to a separation of concerns, utilizing a concurren
 ```bash
 git clone [https://github.com/Ryan-z-Feng-ccsf/ai-call-assistant.git](https://github.com/Ryan-z-Feng-ccsf/ai-call-assistant.git)
 cd ai-call-assistant
-
+```
 
 ### 2. Backend Setup (Dockerized)
 Create a .env file in backend/app/:
