@@ -60,7 +60,7 @@ function groupRecords(records: CallRecord[]): Group[] {
   const buckets: Record<string, CallRecord[]> = {};
 
   for (const r of records) {
-    const d = new Date(r.date.replace(" ", "T"));
+    const d = new Date(r.date.replace(" ", "T") + "Z"); // UTC → local
     const day = new Date(d.getFullYear(), d.getMonth(), d.getDate());
     let key: string;
     if (day >= today) key = "Today";
@@ -104,7 +104,7 @@ function exportAllMarkdown(records: CallRecord[]) {
       const parts = rep.split("\n").map(p => p.trim()).filter(Boolean);
       return `  ${i + 1}. ${parts[0] ?? rep}${parts[1] ? `\n     *${parts[1]}*` : ""}`;
     }).join("\n");
-    return `## Session #${r.id} — ${r.date}
+    return `## Session #${r.id} — ${new Date(r.date.replace(" ", "T") + "Z").toLocaleString("en-US", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false })}
 **Scenario:** ${r.scenario} | **Languages:** ${r.source_language} → ${r.target_language}
 
 ### Transcript
@@ -148,7 +148,7 @@ function exportAllPDF(records: CallRecord[]) {
     <div class="session">
       <div class="session-header">
         <div class="session-title">${r.scenario}</div>
-        <div class="session-meta">${r.date} &nbsp;·&nbsp; ${r.source_language} → ${r.target_language}</div>
+        <div class="session-meta">${new Date(r.date.replace(" ", "T") + "Z").toLocaleString("en-US", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false })} &nbsp;·&nbsp; ${r.source_language} → ${r.target_language}</div>
       </div>
       <div class="block">
         <div class="block-label">📝 Transcript</div>
@@ -216,7 +216,7 @@ function exportSessionMarkdown(r: CallRecord) {
   }).join("\n");
 
   const md = `# Call Session Report
-**Date:** ${r.date}
+**Date:** ${new Date(r.date.replace(" ", "T") + "Z").toLocaleString("en-US", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false })}
 **Scenario:** ${r.scenario}
 **Languages:** ${r.source_language} → ${r.target_language}
 
@@ -261,7 +261,7 @@ function exportSessionPDF(r: CallRecord) {
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Session Report — ${r.date}</title>
+<title>Session Report — ${new Date(r.date.replace(" ", "T") + "Z").toLocaleString("en-US", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false })}</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -289,7 +289,7 @@ function exportSessionPDF(r: CallRecord) {
   <div class="header">
     <div class="title">📞 Call Session Report</div>
     <div class="meta">
-      <div class="meta-item"><span class="meta-label">Date:</span> ${r.date}</div>
+      <div class="meta-item"><span class="meta-label">Date:</span> ${new Date(r.date.replace(" ", "T") + "Z").toLocaleString("en-US", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false })}</div>
       <div class="meta-item"><span class="meta-label">Scenario:</span> ${r.scenario}</div>
       <div class="meta-item"><span class="meta-label">Languages:</span> ${r.source_language} → ${r.target_language}</div>
     </div>
