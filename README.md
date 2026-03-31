@@ -115,8 +115,12 @@ ai-call-assistant/
 │   │   ├── globals.css           # Global styles & CSS variables (Theme configuration)
 │   │   ├── layout.tsx            # Root layout, ClerkProvider, Sync theme script
 │   │   └── page.tsx              # Main interactive call interface (WebSocket client)
+│   ├── components/
+│   │   └── Flag.tsx              # Reusable flag icon component (flag-icons CSS)
+│   │   └── ThemeToggle.tsx       # Theme switcher button (dark/light/cyber)
 │   ├── lib/
 │   │   └── useTheme.ts           # Custom React hook for dynamic theme switching
+│   │   └── constant.ts           # Shared constants: LANGUAGES, SCENARIOS, formatLocalDate
 │   ├── public/
 │   │   └── auth-bg.png           # Authentication background asset
 │   ├── middleware.ts             # Clerk authentication route protection
