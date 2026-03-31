@@ -34,67 +34,68 @@ This project strictly adheres to a separation of concerns, utilizing a concurren
 The application follows a decoupled architecture, optimizing for both fast static asset delivery and low-latency real-time communication. 
 
 ```mermaid
-%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#1a1a1b', 'edgeLabelBackground':'#1a1a1b', 'tertiaryColor': '#1a1a1b'}}}%%
 graph TD
-    %% Define Nodes
-    User("👤 User (Browser / Client)")
-    Vercel("Front-end (Next.js on Vercel)")
-    DNS("🌐 DNS / Domain (e.g., Cloudflare)")
-    DO("Back-end (FastAPI on DigitalOcean)")
-    SQLite[("🗄️ Database (SQLite / Volume)")]
-    Deepgram("🎤 STT Engine (Deepgram)")
-    Gemini("🧠 AI Brain (Gemini)")
+    %% Style Definitions
+    classDef frontend fill:#e0f2fe,stroke:#2563eb,stroke-width:2px
+    classDef backend fill:#fce7f3,stroke:#4f46e5,stroke-width:2px
+    classDef external fill:#fef3c7,stroke:#db2777,stroke-width:2px
+    classDef db fill:#dcfce3,stroke:#16a34a,stroke-width:2px
+    classDef network fill:#f3f4f6,stroke:#475569,stroke-width:2px
 
-    %% Define Subgraphs
-    subgraph "Public Internet"
-        User
-        DNS
+    User((🗣️ User))
+
+    subgraph Frontend_Vercel ["Frontend Layer (Hosted on Vercel)"]
+        UI[Next.js + React UI]:::frontend
+        Mic[MediaRecorder API]:::frontend
+        TTS[Web Speech API TTS]:::frontend
     end
 
-    subgraph "Cloud Infrastructure"
-        Vercel
-        DO
-        SQLite
+    subgraph Network_Layer ["Network & Security Layer"]
+        DNS[DNS Route 53 / Domain]:::network
+        Caddy[Caddy Reverse Proxy + Auto SSL]:::network
     end
 
-    subgraph "AI APIs"
-        Deepgram
-        Gemini
+    subgraph Backend_Server ["Compute Layer (Docker on DigitalOcean)"]
+        WS[WebSocket /ws/audio]:::backend
+        FastAPI[FastAPI Async Server]:::backend
+        LLM[LLM Service Logic]:::backend
     end
 
-    %% Define Edges and Labels
-    User -.->|"1. Page Load (HTTPS)"| DNS
-    DNS ==>|"A. Forward Request"| Vercel
-    Vercel -->|"B. Serve Static Assets (HTML/CSS/JS)"| User
+    subgraph External_AI ["External AI Services (API)"]
+        Deepgram["Deepgram STT (Real-time)"]:::external
+        Gemini["Gemini 3.1 Flash Lite (LLM)"]:::external
+    end
 
-    User ==>|"2. Audio Stream (WSS)"| DO
-    DO ==>|"C. Proxy Audio chunks"| Deepgram
-    Deepgram -.->|"D. Transcribed Text"| DO
-    DO -.->|"3. Real-time Text"| User
+    subgraph Cloud_DB ["Managed Data Layer (Neon)"]
+        Postgres[(Neon Serverless PostgreSQL)]:::db
+    end
 
-    DO ==>|"E. Process Transcript"| Gemini
-    Gemini -.->|"F. Summary & Translation"| DO
-    DO -->|"4. AI Insights"| User
+    %% Data Flow
+    User -- "Audio Input" --> Mic
+    Mic -- "1. Real-time Stream (wss://)" --> DNS
+    DNS --> Caddy
+    Caddy -- "2. SSL Offloading & Proxy (ws://)" --> WS
+    WS --> FastAPI
     
-    DO <==>|"G. Async Read/Write"| SQLite
+    %% AI Pipeline
+    FastAPI -- "3. Stream Audio Data" --> Deepgram
+    Deepgram -. "4. Live Transcript" .-> FastAPI
+    FastAPI -- "5. Contextual Prompting" --> LLM
+    LLM -- "6. Translation & Reasoning" --> Gemini
+    Gemini -. "7. Bilingual JSON Response" .-> LLM
+    
+    %% Database - Key Architectural Highlight
+    LLM -- "8. Async Persistence (asyncpg + SSL)" --> Postgres
+    
+    %% Response Flow
+    LLM -- "9. Push Structured Data" --> WS
+    WS --> Caddy
+    Caddy -- "10. Encrypted JSON Delivery" --> UI
+    UI -- "11. Parse English Response" --> TTS
+    TTS -- "12. Voice Synthesis" --> User
 
-    %% Styling
-    classDef plain fill:#2d2d2d,stroke:#555,stroke-width:1px,color:#eee;
-    classDef db fill:#3b3b3c,stroke:#777,stroke-width:2px,color:#eee,stroke-dasharray: 5 5;
-    classDef api fill:#4a4a4b,stroke:#999,stroke-width:1px,color:#fff,rx:10,ry:10;
-    classDef highlight fill:#1f4f96,stroke:#66aaff,stroke-width:2px,color:#fff;
-    classDef dns fill:#2a6a4a,stroke:#66ccaa,stroke-width:1px,color:#fff;
-
-    class User,Vercel highlight;
-    class DO plain;
-    class SQLite db;
-    class Deepgram,Gemini api;
-    class DNS dns;
-
-    %% Link Styles
-    linkStyle default stroke:#888,stroke-width:1px;
-    linkStyle 1,4,5,8,9 stroke:#66aaff,stroke-width:2px; 
-    linkStyle 0,3,7 stroke:#888,stroke-width:1px,stroke-dasharray: 3 3;
+    %% Footnote
+    class Postgres db
 ```
 
 ## 📂 Project Architecture & Directory Structure
