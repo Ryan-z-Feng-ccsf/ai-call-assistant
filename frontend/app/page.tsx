@@ -1,58 +1,16 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useTheme } from "@/lib/useTheme";
 import { useAuth, SignInButton, UserButton } from "@clerk/nextjs";
-
-const SCENARIOS = [
-  { value: "General Professional Call", icon: "📞", label: "General Professional Call" },
-  { value: "Software Engineering Job Interview", icon: "💻", label: "Software Engineering Interview" },
-  { value: "Customer Support Dispute", icon: "🛒", label: "Customer Support Dispute" },
-  { value: "Doctor Appointment", icon: "🏥", label: "Doctor Appointment" },
-  { value: "Bank or Credit Card", icon: "🏦", label: "Bank or Credit Card" },
-  { value: "Landlord or Utilities", icon: "🏠", label: "Landlord or Utilities" },
-  { value: "Ordering Food at a Restaurant", icon: "🍽️", label: "Ordering Food" },
-];
-
-const LANGUAGES = [
-  { value: "English", code: "us", label: "English" },
-  { value: "Chinese (中文)", code: "cn", label: "中文" },
-  { value: "Spanish (Español)", code: "es", label: "Español" },
-  { value: "French (Français)", code: "fr", label: "Français" },
-  { value: "Japanese (日本語)", code: "jp", label: "日本語" },
-  { value: "Korean (한국어)", code: "kr", label: "한국어" },
-  { value: "Portuguese (Português)", code: "br", label: "Português" },
-  { value: "Arabic (العربية)", code: "sa", label: "العربية" },
-  { value: "Hindi (हिन्दी)", code: "in", label: "हिन्दी" },
-  { value: "German (Deutsch)", code: "de", label: "Deutsch" },
-  { value: "Vietnamese (Tiếng Việt)", code: "vn", label: "Tiếng Việt" },
-  { value: "Italian (Italiano)", code: "it", label: "Italiano" },
-  { value: "Russian (Русский)", code: "ru", label: "Русский" },
-  { value: "Dutch (Nederlands)", code: "nl", label: "Nederlands" },
-];
+import { Flag } from "@/components/Flag";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { LANGUAGES, SCENARIOS } from "@/lib/constants";
 
 // Uses flag-icons CSS library — no image requests, works on all platforms including Windows
-function Flag({ code, size = 18 }: { code: string; size?: number }) {
-  return (
-    <span
-      className={`fi fi-${code}`}
-      style={{
-        width: size,
-        height: Math.round(size * 0.75),
-        borderRadius: 3,
-        display: "inline-block",
-        flexShrink: 0,
-        verticalAlign: "middle",
-        overflow: "hidden",
-      }}
-    />
-  );
-}
 
 type LangPickerSide = "source" | "target" | null;
 
 export default function CallAssistant() {
-  const { theme, toggleTheme } = useTheme();
   const { getToken, userId } = useAuth();
 
   const [isRecording, setIsRecording] = useState(false);
@@ -539,9 +497,7 @@ export default function CallAssistant() {
 
             {/* 右上角：主题与登录 */}
             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-              <button suppressHydrationWarning className="btn-theme" onClick={toggleTheme} title={`Switch to ${theme === "dark" ? "light" : theme === "light" ? "cyber" : "dark"} mode`}>
-                {theme === "dark" ? "🌙" : theme === "light" ? "☀️" : "⚡"}
-              </button>
+              <ThemeToggle />
 
               {!userId ? (
                 <SignInButton mode="modal">

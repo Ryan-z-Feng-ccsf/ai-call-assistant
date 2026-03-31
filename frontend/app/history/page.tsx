@@ -3,6 +3,9 @@
 import { useState, useEffect, useRef } from "react";
 import { useTheme } from "@/lib/useTheme";
 import { useAuth, SignInButton, UserButton } from "@clerk/nextjs";
+import { Flag } from "@/components/Flag";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { formatLocalDate } from "@/lib/constants";
 
 type CallRecord = {
   id: number;
@@ -320,7 +323,7 @@ function exportSessionPDF(r: CallRecord) {
 }
 
 export default function HistoryPage() {
-  const { theme, toggleTheme, mounted } = useTheme();
+  const { theme, mounted } = useTheme();
   const { userId, getToken } = useAuth();
   const [records, setRecords] = useState<CallRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -892,14 +895,7 @@ export default function HistoryPage() {
 
               {/* 右上角：主题与登录 */}
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <button
-                  className="btn-theme"
-                  onClick={toggleTheme}
-                  title={`Switch to ${theme === "dark" ? "light" : theme === "light" ? "cyber" : "dark"} mode`}
-                >
-                  {/* 在客户端还没挂载完之前，先显示透明或默认图标，挂载后再显示真实图标 */}
-                  {!mounted ? "⚡" : theme === "dark" ? "🌙" : theme === "light" ? "☀️" : "⚡"}
-                </button>
+                <ThemeToggle />
 
                 {!userId ? (
                   <SignInButton mode="modal">
@@ -1044,7 +1040,7 @@ export default function HistoryPage() {
                         <div className="card-meta">
                           <div className="card-scenario">{record.scenario}</div>
                           <div className="card-sub">
-                            <span className="card-date">{new Date(record.date.replace(" ", "T") + "Z").toLocaleString("en-US", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false })}</span>
+                            <span className="card-date">{formatLocalDate(record.date)}</span>
                             <span className="dot-sep" />
                             <span className="card-lang-pair">
                               {srcFlag} <span className="lang-arrow">→</span> {tgtFlag}
