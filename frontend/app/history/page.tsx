@@ -1044,7 +1044,7 @@ export default function HistoryPage() {
                         <div className="card-meta">
                           <div className="card-scenario">{record.scenario}</div>
                           <div className="card-sub">
-                            <span className="card-date">{record.date}</span>
+                            <span className="card-date">{new Date(record.date.replace(" ", "T") + "Z").toLocaleString("en-US", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false })}</span>
                             <span className="dot-sep" />
                             <span className="card-lang-pair">
                               {srcFlag} <span className="lang-arrow">→</span> {tgtFlag}
