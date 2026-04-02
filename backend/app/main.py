@@ -264,7 +264,7 @@ async def audio_stream_endpoint(
                 print(f"🎤 Heard: {sentence}")
                 await websocket.send_text(json.dumps({"transcript": sentence}))
                 transcript_buffer += sentence + " "
-                if len(transcript_buffer.strip()) > 15:
+                if getattr(result, "speech_final", False) and len(transcript_buffer.strip()) > 0:
                     current_transcript = transcript_buffer.strip()
 
                     # 1. Call LLM to get response
@@ -299,7 +299,12 @@ async def audio_stream_endpoint(
         dg_connection.on(LiveTranscriptionEvents.Transcript, on_message)
         dg_connection.on(LiveTranscriptionEvents.Error, on_error)
 
-        options = LiveOptions(model="nova-3", language=dg_lang, smart_format=True)
+        options = LiveOptions(
+    model="nova-3", 
+    language=dg_lang, 
+    smart_format=True, 
+    endpointing=800  # 👈 Wait for 800 milliseconds for mute (you can adjust it to 500 or 1000 according to your feeling)
+)
         if not await dg_connection.start(options):
             print("🔴 Failed to connect to Deepgram.")
             return
