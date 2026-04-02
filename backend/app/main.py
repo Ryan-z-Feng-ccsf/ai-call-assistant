@@ -306,7 +306,7 @@ async def audio_stream_endpoint(
             model="nova-3",
             language=dg_lang,
             smart_format=True,
-            endpointing=800,  # 👈 Wait for 800 milliseconds for mute (you can adjust it to 500 or 1000 according to your feeling)
+            endpointing=1000,  # 👈 Wait for 1000 milliseconds for mute (you can adjust it to 500 or 1000 according to your feeling)
         )
         if not await dg_connection.start(options):
             print("🔴 Failed to connect to Deepgram.")
