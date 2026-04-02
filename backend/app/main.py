@@ -258,40 +258,43 @@ async def audio_stream_endpoint(
         async def on_message(self, result, **kwargs):
             nonlocal transcript_buffer
             sentence = result.channel.alternatives[0].transcript
-            if not sentence:
-                return
-            if result.is_final:
+            is_final = result.is_final
+            speech_final = getattr(result, "speech_final", False)
+
+            if sentence and is_final:
                 print(f"🎤 Heard: {sentence}")
                 await websocket.send_text(json.dumps({"transcript": sentence}))
                 transcript_buffer += sentence + " "
-                if getattr(result, "speech_final", False) and len(transcript_buffer.strip()) > 0:
-                    current_transcript = transcript_buffer.strip()
 
-                    # 1. Call LLM to get response
-                    ml_response = await process_audio_transcript(
-                        current_transcript, scenario, source_language, target_language
+            if speech_final and len(transcript_buffer.strip()) > 0:
+                current_transcript = transcript_buffer.strip()
+                print(f"🗣️ Speech Final Triggered! Processing: {current_transcript}")
+
+                # 1. Call LLM to get response
+                ml_response = await process_audio_transcript(
+                    current_transcript, scenario, source_language, target_language
+                )
+
+                # 2. ⚡ Core acceleration: Directly throw the task of writing to the database into the background without waiting for it to complete!
+                asyncio.create_task(
+                    save_record_bg(
+                        user_id=user_id,
+                        scenario=scenario,
+                        source_language=source_language,
+                        target_language=target_language,
+                        transcript=current_transcript,
+                        summary=ml_response.get("summary", ""),
+                        translation=ml_response.get("translation", ""),
+                        replies=ml_response.get("replies", []),
                     )
+                )
 
-                    # 2. ⚡ Core acceleration: Directly throw the task of writing to the database into the background without waiting for it to complete!
-                    asyncio.create_task(
-                        save_record_bg(
-                            user_id=user_id,
-                            scenario=scenario,
-                            source_language=source_language,
-                            target_language=target_language,
-                            transcript=current_transcript,
-                            summary=ml_response.get("summary", ""),
-                            translation=ml_response.get("translation", ""),
-                            replies=ml_response.get("replies", []),
-                        )
-                    )
+                # 3. Zero delay, immediately push the LLM's response to the frontend
+                ml_response.pop("transcript", None)
+                await websocket.send_text(json.dumps(ml_response))
 
-                    # 3. Zero delay, immediately push the LLM's response to the frontend
-                    ml_response.pop("transcript", None)
-                    await websocket.send_text(json.dumps(ml_response))
-
-                    # 4. Clear the buffer to prepare for the next sentence
-                    transcript_buffer = ""
+                # 4. Clear the buffer to prepare for the next sentence
+                transcript_buffer = ""
 
         async def on_error(self, error, **kwargs):
             print(f"⚠️ Deepgram Error: {error}")
@@ -300,11 +303,11 @@ async def audio_stream_endpoint(
         dg_connection.on(LiveTranscriptionEvents.Error, on_error)
 
         options = LiveOptions(
-    model="nova-3", 
-    language=dg_lang, 
-    smart_format=True, 
-    endpointing=800  # 👈 Wait for 800 milliseconds for mute (you can adjust it to 500 or 1000 according to your feeling)
-)
+            model="nova-3",
+            language=dg_lang,
+            smart_format=True,
+            endpointing=800,  # 👈 Wait for 800 milliseconds for mute (you can adjust it to 500 or 1000 according to your feeling)
+        )
         if not await dg_connection.start(options):
             print("🔴 Failed to connect to Deepgram.")
             return
