@@ -2,7 +2,14 @@ import asyncio
 import json
 import os
 import httpx
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Depends, Request
+from fastapi import (
+    FastAPI,
+    WebSocket,
+    WebSocketDisconnect,
+    HTTPException,
+    Depends,
+    Request,
+)
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import uvicorn
@@ -22,15 +29,17 @@ app = FastAPI()
 
 # ── Clerk JWT verification ──────────────────────────────────────
 CLERK_PUBLISHABLE_KEY = os.getenv("CLERK_PUBLISHABLE_KEY", "")
-CLERK_SECRET_KEY      = os.getenv("CLERK_SECRET_KEY", "")
+CLERK_SECRET_KEY = os.getenv("CLERK_SECRET_KEY", "")
 
 security = HTTPBearer()
+
 
 async def get_clerk_public_keys():
     """Fetch Clerk's JWKS for JWT verification."""
     # Extract the Clerk domain from the publishable key
     # pk_test_xxx -> xxx.clerk.accounts.dev
     import base64
+
     try:
         raw = CLERK_PUBLISHABLE_KEY.split("_")[2]
         # Add padding
@@ -45,29 +54,33 @@ async def get_clerk_public_keys():
         print(f"Failed to fetch JWKS: {e}")
         return None
 
-async def verify_clerk_token(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
+
+async def verify_clerk_token(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+) -> str:
     """Verify Clerk JWT and return user_id."""
     token = credentials.credentials
     try:
         # Decode without verification first to get the header
         header = jwt.get_unverified_header(token)
-        
+
         # Fetch public keys
         jwks = await get_clerk_public_keys()
         if not jwks:
             raise HTTPException(status_code=401, detail="Could not fetch auth keys")
-        
+
         # Find the matching key
         public_key = None
         for key in jwks.get("keys", []):
             if key.get("kid") == header.get("kid"):
                 from jwt.algorithms import RSAAlgorithm
+
                 public_key = RSAAlgorithm.from_jwk(json.dumps(key))
                 break
-        
+
         if not public_key:
             raise HTTPException(status_code=401, detail="Public key not found")
-        
+
         # Verify and decode
         payload = jwt.decode(
             token,
@@ -96,8 +109,7 @@ async def startup_event():
 
 # ── CORS ────────────────────────────────────────────────────────
 ALLOWED_ORIGINS = os.getenv(
-    "ALLOWED_ORIGINS",
-    "http://localhost:3000,https://ai-call-assistant-tau.vercel.app"
+    "ALLOWED_ORIGINS", "http://localhost:3000,https://ai-call-assistant-tau.vercel.app"
 ).split(",")
 
 app.add_middleware(
@@ -111,20 +123,20 @@ app.add_middleware(
 deepgram = DeepgramClient(os.getenv("DEEPGRAM_API_KEY"))
 
 DEEPGRAM_LANG_CODES: dict[str, str] = {
-    "English":              "en-US",
-    "Chinese (中文)":       "zh-CN",
-    "Spanish (Español)":    "es",
-    "French (Français)":    "fr",
-    "Japanese (日本語)":    "ja",
-    "Korean (한국어)":      "ko",
+    "English": "en-US",
+    "Chinese (中文)": "zh-CN",
+    "Spanish (Español)": "es",
+    "French (Français)": "fr",
+    "Japanese (日本語)": "ja",
+    "Korean (한국어)": "ko",
     "Portuguese (Português)": "pt",
-    "Arabic (العربية)":     "ar",
-    "Hindi (हिन्दी)":       "hi",
-    "German (Deutsch)":     "de",
+    "Arabic (العربية)": "ar",
+    "Hindi (हिन्दी)": "hi",
+    "German (Deutsch)": "de",
     "Vietnamese (Tiếng Việt)": "vi",
-    "Italian (Italiano)":   "it",
-    "Russian (Русский)":    "ru",
-    "Dutch (Nederlands)":   "nl",
+    "Italian (Italiano)": "it",
+    "Russian (Русский)": "ru",
+    "Dutch (Nederlands)": "nl",
 }
 
 
@@ -140,7 +152,7 @@ async def get_call_history(user_id: str = Depends(verify_clerk_token)):
     async with SessionLocal() as db:
         result = await db.execute(
             select(CallRecord)
-            .where(CallRecord.user_id == user_id)   # ← only this user's records
+            .where(CallRecord.user_id == user_id)  # ← only this user's records
             .order_by(CallRecord.created_at.desc())
         )
         records = result.scalars().all()
@@ -161,12 +173,14 @@ async def get_call_history(user_id: str = Depends(verify_clerk_token)):
 
 
 @app.delete("/history/{record_id}")
-async def delete_call_record(record_id: int, user_id: str = Depends(verify_clerk_token)):
+async def delete_call_record(
+    record_id: int, user_id: str = Depends(verify_clerk_token)
+):
     async with SessionLocal() as db:
         result = await db.execute(
             select(CallRecord).filter(
                 CallRecord.id == record_id,
-                CallRecord.user_id == user_id,   # ← can only delete own records
+                CallRecord.user_id == user_id,  # ← can only delete own records
             )
         )
         record = result.scalar_one_or_none()
@@ -177,6 +191,37 @@ async def delete_call_record(record_id: int, user_id: str = Depends(verify_clerk
         return {"message": "Record deleted successfully"}
 
 
+# ── Background Task: Save to DB ────────────────────────────────
+async def save_record_bg(
+    user_id: str,
+    scenario: str,
+    source_language: str,
+    target_language: str,
+    transcript: str,
+    summary: str,
+    translation: str,
+    replies: list,
+):
+    """Background asynchronous task to save call record, not blocking the main WebSocket communication thread"""
+    try:
+        async with SessionLocal() as db:
+            new_record = CallRecord(
+                user_id=user_id,
+                scenario=scenario,
+                source_language=source_language,
+                target_language=target_language,
+                transcript=transcript,
+                summary=summary,
+                translation=translation,
+                replies_json=json.dumps(replies),
+            )
+            db.add(new_record)
+            await db.commit()
+            print("💾 [Background] Record saved to PostgreSQL.")
+    except Exception as e:
+        print(f"⚠️ [Background] DB Save Error: {e}")
+
+
 # ── WebSocket ────────────────────────────────────────────────────
 @app.websocket("/ws/audio")
 async def audio_stream_endpoint(
@@ -184,7 +229,7 @@ async def audio_stream_endpoint(
     scenario: str = "General Professional Call",
     source_language: str = "English",
     target_language: str = "Chinese (中文)",
-    token: str = "",        # Clerk session token passed as query param
+    token: str = "",  # Clerk session token passed as query param
 ):
     # Verify token before accepting
     if not token:
@@ -195,6 +240,7 @@ async def audio_stream_endpoint(
         # Re-use the same verification logic
         class FakeCreds:
             credentials = token
+
         user_id = await verify_clerk_token(FakeCreds())
     except HTTPException:
         await websocket.close(code=4001)
@@ -219,25 +265,32 @@ async def audio_stream_endpoint(
                 await websocket.send_text(json.dumps({"transcript": sentence}))
                 transcript_buffer += sentence + " "
                 if len(transcript_buffer.strip()) > 15:
+                    current_transcript = transcript_buffer.strip()
+
+                    # 1. Call LLM to get response
                     ml_response = await process_audio_transcript(
-                        transcript_buffer.strip(), scenario, source_language, target_language
+                        current_transcript, scenario, source_language, target_language
                     )
-                    async with SessionLocal() as db:
-                        new_record = CallRecord(
+
+                    # 2. ⚡ Core acceleration: Directly throw the task of writing to the database into the background without waiting for it to complete!
+                    asyncio.create_task(
+                        save_record_bg(
                             user_id=user_id,
                             scenario=scenario,
                             source_language=source_language,
                             target_language=target_language,
-                            transcript=transcript_buffer.strip(),
+                            transcript=current_transcript,
                             summary=ml_response.get("summary", ""),
                             translation=ml_response.get("translation", ""),
-                            replies_json=json.dumps(ml_response.get("replies", [])),
+                            replies=ml_response.get("replies", []),
                         )
-                        db.add(new_record)
-                        await db.commit()
-                        print("💾 Record saved.")
+                    )
+
+                    # 3. Zero delay, immediately push the LLM's response to the frontend
                     ml_response.pop("transcript", None)
                     await websocket.send_text(json.dumps(ml_response))
+
+                    # 4. Clear the buffer to prepare for the next sentence
                     transcript_buffer = ""
 
         async def on_error(self, error, **kwargs):
