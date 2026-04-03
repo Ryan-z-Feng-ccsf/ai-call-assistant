@@ -1,6 +1,13 @@
 # 🌐 AI Call Assistant
 
-> A real-time, full-stack AI voice assistant designed to bridge language barriers during professional phone calls. 
+> A real-time, full-stack AI voice assistant designed to bridge language barriers during professional phone calls.
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.12%2B-blue" alt="Python">
+  <img src="https://img.shields.io/badge/Next.js-15-black" alt="Next.js">
+  <img src="https://img.shields.io/badge/FastAPI-Backend-009688" alt="FastAPI">
+  <img src="https://img.shields.io/badge/Deepgram-STT-orange" alt="Deepgram">
+  <img src="https://img.shields.io/badge/Gemini-AI_Assistant-brightgreen" alt="Generative AI">
+</p>
 
 AI Call Assistant captures live audio, performs ultra-low latency Speech-to-Text (STT) transcription, and leverages Generative AI to provide instant bilingual summaries, translations, and actionable smart replies.
 
@@ -29,8 +36,6 @@ This project strictly adheres to a separation of concerns, utilizing a concurren
 3. **The AI Brain (Google Gemini):** Processes full sentences to generate structured JSON payloads (Summaries, Translations, Replies).
 4. **Data Persistence (SQLAlchemy):** Asynchronously commits session metadata to a relational database.
     
-## System Architecture
-
 The application follows a decoupled architecture, optimizing for both fast static asset delivery and low-latency real-time communication. 
 
 ```mermaid
