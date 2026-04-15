@@ -4,9 +4,7 @@
 import { useTheme } from "@/lib/useTheme";
 
 export function ThemeToggle() {
-  const { theme, toggleTheme, mounted } = useTheme();
-
-  const icon  = !mounted ? "⚡" : theme === "dark" ? "🌙" : theme === "light" ? "☀️" : "⚡";
+  const { theme, toggleTheme } = useTheme();
   const title = `Switch to ${theme === "dark" ? "light" : theme === "light" ? "cyber" : "dark"} mode`;
 
   return (
@@ -14,17 +12,18 @@ export function ThemeToggle() {
       suppressHydrationWarning
       onClick={toggleTheme}
       title={title}
+      aria-label={title}
+      className="theme-toggle"
       style={{
         width: 36, height: 36, borderRadius: 11,
         border: "1px solid var(--border-glass)",
         background: "var(--bg-control)",
-        display: "flex", alignItems: "center", justifyContent: "center",
+        display: "inline-flex", alignItems: "center", justifyContent: "center",
         cursor: "pointer", fontSize: 16,
         transition: "all 0.2s", flexShrink: 0,
         color: "var(--text-primary)",
+        position: "relative",
       }}
-    >
-      {icon}
-    </button>
+    />
   );
 }

@@ -323,7 +323,7 @@ function exportSessionPDF(r: CallRecord) {
 }
 
 export default function HistoryPage() {
-  const { theme, mounted } = useTheme();
+  const { theme } = useTheme();
   const { userId, getToken } = useAuth();
   const [records, setRecords] = useState<CallRecord[]>([]);
   const [loading, setLoading] = useState(true);

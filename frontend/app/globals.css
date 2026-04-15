@@ -10,6 +10,23 @@ html[data-theme="dark"] {
   --bg-btn:          rgba(255,255,255,0.08);
   --bg-btn-hover:    rgba(255,255,255,0.14);
   --bg-menu:         #1c1c21;
+
+  --theme-toggle-icon: "🌙";
+}
+
+html[data-theme="light"] {
+  --theme-toggle-icon: "☀️";
+}
+
+html[data-theme="cyber"] {
+  --theme-toggle-icon: "⚡";
+}
+
+.theme-toggle::before {
+  content: var(--theme-toggle-icon, "⚡");
+  display: inline-block;
+  line-height: 1;
+}
   --bg-sidebar-hover:  rgba(255,255,255,0.06);
   --bg-sidebar-active: rgba(99,102,241,0.18);
   --border:          #2e2e35;
