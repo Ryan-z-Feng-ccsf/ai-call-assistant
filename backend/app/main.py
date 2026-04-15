@@ -122,6 +122,27 @@ app.add_middleware(
 
 deepgram = DeepgramClient(os.getenv("DEEPGRAM_API_KEY"))
 
+
+def get_endpointing_value(scenario: str) -> int:
+    """Dynamically adjust Deepgram endpointing based on call scenario.
+
+    Fast-paced scenarios (commands, quick instructions) use shorter endpointing
+    to detect speech boundaries faster. Slow-paced scenarios (learning, practice)
+    use longer endpointing to allow for natural pauses.
+    """
+    scenario_lower = scenario.lower()
+
+    # Fast pace: quick instructions, commands
+    if any(kw in scenario_lower for kw in ("command", "quick", "urgent", "fast")):
+        return 500
+
+    # Slow pace: language learning, deep thinking, practice
+    if any(kw in scenario_lower for kw in ("learning", "practice", "education", "study")):
+        return 1500
+
+    # Default for general professional calls
+    return 1000
+
 DEEPGRAM_LANG_CODES: dict[str, str] = {
     "English": "en-US",
     "Chinese (中文)": "zh-CN",
@@ -302,11 +323,13 @@ async def audio_stream_endpoint(
         dg_connection.on(LiveTranscriptionEvents.Transcript, on_message)
         dg_connection.on(LiveTranscriptionEvents.Error, on_error)
 
+        endpointing_ms = get_endpointing_value(scenario)
+        print(f"🎯 Endpointing: {endpointing_ms}ms for scenario: {scenario}")
         options = LiveOptions(
             model="nova-3",
             language=dg_lang,
             smart_format=True,
-            endpointing=1000,  # 👈 Wait for 1000 milliseconds for mute (you can adjust it to 500 or 1000 according to your feeling)
+            endpointing=endpointing_ms,
         )
         if not await dg_connection.start(options):
             print("🔴 Failed to connect to Deepgram.")
