@@ -880,7 +880,7 @@ export default function HistoryPage() {
 
           {/* ── Main ── */}
           <main className="main">
-            {/* ── 第一层：标题 与 全局控制 (主题/登录) ── */}
+            {/* ── Row 1: Title & Global Controls (Theme/Auth) ── */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "24px", gap: "20px", flexWrap: "wrap" }}>
               <div>
                 <a href="/" className="back-link">
@@ -893,7 +893,7 @@ export default function HistoryPage() {
                 <div className="page-subtitle">Your past sessions, organized by time</div>
               </div>
 
-              {/* 右上角：主题与登录 */}
+              {/* Top Right: Theme & Auth */}
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                 <ThemeToggle />
 
@@ -911,7 +911,7 @@ export default function HistoryPage() {
               </div>
             </div>
 
-            {/* ── 第二层：页面工具 (搜索/筛选/导出) ── */}
+            {/* ── Row 2: Page Tools (Search/Filter/Export) ── */}
             <div className="top-actions" style={{ marginBottom: "40px", width: "100%", flexWrap: "wrap" }}>
               {/* Search */}
               <div className="search-wrap">
