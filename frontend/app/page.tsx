@@ -482,7 +482,7 @@ export default function CallAssistant() {
       <div className="app-bg">
         <header className="header glass" style={{ flexDirection: "column", alignItems: "stretch", gap: "20px" }}>
           
-          {/* 👆 第一层：标题区域 (左) 与 账号/主题控制区 (右) */}
+          {/* 👆 Top Row: App Title (Left) & Auth/Theme Controls (Right) */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <div>
               <div className="app-title">AI Call Assistant</div>
@@ -495,7 +495,7 @@ export default function CallAssistant() {
               </a>
             </div>
 
-            {/* 右上角：主题与登录 */}
+            {/* Top Right: Theme & Auth */}
             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
               <ThemeToggle />
 
@@ -511,38 +511,38 @@ export default function CallAssistant() {
   appearance={{
     
     variables: {
-      // 全局变量绑定你的 CSS 变量
+      // Bind global variables to custom CSS variables
       colorPrimary: "var(--accent)",
       colorText: "var(--text-primary)",
       colorTextSecondary: "var(--text-muted)",
       colorBackground: "var(--bg-popover)",
     },
     elements: {
-      // 强制面板背景和边框使用你的主题色
+      // Force panel background and border to use theme colors
       userButtonPopoverCard: {
         backgroundColor: "var(--bg-popover)",
         backdropFilter: "blur(24px)",
         border: "1px solid var(--border-glass)",
         boxShadow: "0 16px 48px rgba(0,0,0,0.2)",
       },
-      // 名字颜色
+      // Name color
       userPreviewMainIdentifier: {
         color: "var(--text-primary)",
         fontWeight: "600",
       },
-      // 邮箱颜色
+      // Email color
       userPreviewSecondaryIdentifier: {
         color: "var(--text-muted)",
       },
-      // 菜单按钮文字（Manage account, Sign out）
+      // Menu button text（Manage account, Sign out）
       userButtonPopoverActionButtonText: {
         color: "var(--text-primary)",
       },
-      // 菜单按钮图标
+      // Menu button icons
       userButtonPopoverActionButtonIcon: {
         color: "var(--text-muted)",
       },
-      // 菜单悬浮效果
+      // Menu hover effect
       userButtonPopoverActionButton: {
         "&:hover": {
           backgroundColor: "var(--bg-option-hover)",
@@ -556,7 +556,7 @@ export default function CallAssistant() {
             </div>
           </div>
 
-          {/* 👇 第二层：核心通话控制区 */}
+          {/* 👇 Row 2: Core Call Controls */}
           <div className="controls" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px" }}>
             
             {/* Scenario Picker */}
