@@ -18,20 +18,7 @@ export default function RootLayout({
         <head>
           <script
             dangerouslySetInnerHTML={{
-              __html: `
-                (function() {
-                  try {
-                    var theme = localStorage.getItem('app-theme');
-                    var valid = ['dark', 'light', 'cyber'];
-                    document.documentElement.setAttribute(
-                      'data-theme',
-                      valid.indexOf(theme) !== -1 ? theme : 'cyber'
-                    );
-                  } catch (e) {
-                    document.documentElement.setAttribute('data-theme', 'cyber');
-                  }
-                })();
-              `,
+              __html: `(function(){try{var theme=localStorage.getItem('app-theme'),valid=['dark','light','cyber'];document.documentElement.dataset.theme=valid.indexOf(theme)!==-1?theme:'cyber'}catch(e){document.documentElement.dataset.theme='cyber'}})();`,
             }}
           />
         </head>
