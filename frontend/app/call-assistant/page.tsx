@@ -1,6 +1,5 @@
-import Link from "next/link";
+"use client";
 
-<<<<<<< HEAD
 import { useState, useRef, useEffect } from "react";
 import { useAuth, SignInButton, UserButton } from "@clerk/nextjs";
 import { Flag } from "@/components/Flag";
@@ -483,7 +482,7 @@ export default function CallAssistant() {
       <div className="app-bg">
         <header className="header glass" style={{ flexDirection: "column", alignItems: "stretch", gap: "20px" }}>
           
-          {/* 👆 Top Row: App Title (Left) & Auth/Theme Controls (Right) */}
+          {/* 👆 第一层：标题区域 (左) 与 账号/主题控制区 (右) */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <div>
               <div className="app-title">AI Call Assistant</div>
@@ -496,7 +495,7 @@ export default function CallAssistant() {
               </a>
             </div>
 
-            {/* Top Right: Theme & Auth */}
+            {/* 右上角：主题与登录 */}
             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
               <ThemeToggle />
 
@@ -512,38 +511,38 @@ export default function CallAssistant() {
   appearance={{
     
     variables: {
-      // Bind global variables to custom CSS variables
+      // 全局变量绑定你的 CSS 变量
       colorPrimary: "var(--accent)",
       colorText: "var(--text-primary)",
       colorTextSecondary: "var(--text-muted)",
       colorBackground: "var(--bg-popover)",
     },
     elements: {
-      // Force panel background and border to use theme colors
+      // 强制面板背景和边框使用你的主题色
       userButtonPopoverCard: {
         backgroundColor: "var(--bg-popover)",
         backdropFilter: "blur(24px)",
         border: "1px solid var(--border-glass)",
         boxShadow: "0 16px 48px rgba(0,0,0,0.2)",
       },
-      // Name color
+      // 名字颜色
       userPreviewMainIdentifier: {
         color: "var(--text-primary)",
         fontWeight: "600",
       },
-      // Email color
+      // 邮箱颜色
       userPreviewSecondaryIdentifier: {
         color: "var(--text-muted)",
       },
-      // Menu button text（Manage account, Sign out）
+      // 菜单按钮文字（Manage account, Sign out）
       userButtonPopoverActionButtonText: {
         color: "var(--text-primary)",
       },
-      // Menu button icons
+      // 菜单按钮图标
       userButtonPopoverActionButtonIcon: {
         color: "var(--text-muted)",
       },
-      // Menu hover effect
+      // 菜单悬浮效果
       userButtonPopoverActionButton: {
         "&:hover": {
           backgroundColor: "var(--bg-option-hover)",
@@ -557,7 +556,7 @@ export default function CallAssistant() {
             </div>
           </div>
 
-          {/* 👇 Row 2: Core Call Controls */}
+          {/* 👇 第二层：核心通话控制区 */}
           <div className="controls" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px" }}>
             
             {/* Scenario Picker */}
@@ -715,20 +714,7 @@ export default function CallAssistant() {
             </div>
           </div>
         </div>
-=======
-export default function HQHome(){
-  return(
-    <div style={{ padding: '50px', textAlign: 'center' }}>
-      <h1>Ryan&apos;s AI Projects</h1>
-      <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginTop: '30px' }}>
-        <Link href={"/call-assistant"}>
-          <button style={{ padding: '15px 30px', cursor: 'pointer' }}>📞 AI Call Assistant</button>
-        </Link>
-        <Link href={"/badminton"}>
-          <button style={{ padding: '15px 30px', cursor: 'pointer' }}>🏸 Badminton Coach</button>        
-        </Link>
->>>>>>> deb2358 (fix: add missing tailwind config and dependencies to resolve ui rendering)
       </div>
-    </div>
+    </>
   );
 }

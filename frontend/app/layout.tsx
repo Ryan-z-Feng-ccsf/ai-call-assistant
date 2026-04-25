@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 
+
 export const metadata: Metadata = {
   title: "AI Call Assistant",
   description: "Real-time AI-powered call translation assistant",
