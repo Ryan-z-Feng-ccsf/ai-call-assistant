@@ -93,6 +93,7 @@ export default function Home() {
   const [lang, setLang] = useState<'en' | 'zh'>('en');
   const t = i18n[lang];
   const [showTechniques, setShowTechniques] = useState(false);
+  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const techniquePickerRef = useRef<HTMLDivElement>(null);
@@ -104,9 +105,9 @@ export default function Home() {
       label: t.techs.smash,
       children: [
         { id: 'smash_standard', label: t.techs.smash_standard },
-        { id: 'smash_stick', label: t.techs.smash_stick },
-        { id: 'smash_jump', label: t.techs.smash_jump },
-        { id: 'smash_slice', label: t.techs.smash_slice },
+        { id: 'smash_stick',    label: t.techs.smash_stick    },
+        { id: 'smash_jump',     label: t.techs.smash_jump     },
+        { id: 'smash_slice',    label: t.techs.smash_slice    },
       ]
     },
     { id: 'half_smash', label: t.techs.half_smash },
@@ -114,7 +115,7 @@ export default function Home() {
       id: 'drop_shot',
       label: t.techs.drop_shot,
       children: [
-        { id: 'drop_slice', label: t.techs.drop_slice },
+        { id: 'drop_slice',         label: t.techs.drop_slice         },
         { id: 'drop_reverse_slice', label: t.techs.drop_reverse_slice },
       ]
     },
@@ -135,9 +136,9 @@ export default function Home() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => { e.preventDefault(); setIsDragging(true); };
-  const handleDragLeave = (e: React.DragEvent<HTMLElement>) => { e.preventDefault(); setIsDragging(false); };
-  const handleDrop = (e: React.DragEvent<HTMLElement>) => {
+  const handleDragOver  = (e: React.DragEvent<HTMLDivElement>) => { e.preventDefault(); setIsDragging(true); };
+  const handleDragLeave = (e: React.DragEvent<HTMLElement>)    => { e.preventDefault(); setIsDragging(false); };
+  const handleDrop      = (e: React.DragEvent<HTMLElement>)    => {
     e.preventDefault();
     setIsDragging(false);
     if (e.dataTransfer.files?.length) setFile(e.dataTransfer.files[0]);
@@ -149,11 +150,11 @@ export default function Home() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!action) { alert(t.alertAction); return; }
-    if (!file) { alert(t.alertFile); return; }
+    if (!file)   { alert(t.alertFile);   return; }
 
     const formData = new FormData();
-    formData.append("action", action);
-    formData.append("video", file);
+    formData.append("action",   action);
+    formData.append("video",    file);
     formData.append("language", lang);
 
     setError(false);
@@ -191,9 +192,9 @@ export default function Home() {
       `[${t.plan}]\n${Array.isArray(feedback.improvement) ? feedback.improvement.join('\n') : feedback.improvement}\n\n` +
       `[${t.power}]\n${feedback.power_technique}\n`;
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
+    const url  = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.href = url;
+    link.href     = url;
     link.download = `Badminton_Analysis_${Date.now()}.txt`;
     document.body.appendChild(link);
     link.click();
@@ -218,43 +219,55 @@ export default function Home() {
         <div className="technique-picker" ref={techniquePickerRef}>
           <div
             className="technique-picker-header"
-            onClick={() => setShowTechniques(!showTechniques)}
+            onClick={() => { setShowTechniques(!showTechniques); setHoveredItem(null); }}
           >
-            <span>{selectedLabel}</span>
+            <span className={action ? 'selected-label' : 'placeholder-label'}>{selectedLabel}</span>
             <span className={`chevron ${showTechniques ? 'open' : ''}`}>▼</span>
           </div>
 
           {showTechniques && (
-            <ul className="technique-dropdown">
+            <div className="technique-dropdown">
               {techniques.map((item) => (
-                <li key={item.id} className="technique-item">
+                <div key={item.id}>
                   {!item.children ? (
                     <div
-                      style={{ width: '100%' }}
-                      onClick={() => { setAction(item.id); setShowTechniques(false); }}
+                      className={`tech-option${action === item.id ? ' tech-option--selected' : ''}`}
+                      onClick={() => { setAction(item.id); setShowTechniques(false); setHoveredItem(null); }}
                     >
                       {item.label}
                     </div>
                   ) : (
-                    <>
-                      <span>{item.label}</span>
-                      <span className="arrow">›</span>
-                      <ul className="technique-sub-menu">
-                        {item.children.map((child) => (
-                          <li
-                            key={child.id}
-                            className="technique-sub-item"
-                            onClick={() => { setAction(child.id); setShowTechniques(false); }}
-                          >
-                            {child.label}
-                          </li>
-                        ))}
-                      </ul>
-                    </>
+                    <div className="tech-group">
+                      <div
+                        className="tech-group-header"
+                        onClick={() => setHoveredItem(hoveredItem === item.id ? null : item.id)}
+                      >
+                        <span>{item.label.replace(' ➔','')}</span>
+                        <span className={`group-arrow ${hoveredItem === item.id ? 'open' : ''}`}>▾</span>
+                      </div>
+                      {hoveredItem === item.id && (
+                        <div className="tech-group-children">
+                          {item.children.map((child) => (
+                            <div
+                              key={child.id}
+                              className={`tech-child${action === child.id ? ' tech-option--selected' : ''}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setAction(child.id);
+                                setShowTechniques(false);
+                                setHoveredItem(null);
+                              }}
+                            >
+                              {child.label}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   )}
-                </li>
+                </div>
               ))}
-            </ul>
+            </div>
           )}
         </div>
 
@@ -295,8 +308,8 @@ export default function Home() {
               `}</style>
               <defs>
                 <linearGradient id="beltGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#064e3b" />
-                  <stop offset="50%" stopColor="#047857" />
+                  <stop offset="0%"   stopColor="#064e3b" />
+                  <stop offset="50%"  stopColor="#047857" />
                   <stop offset="100%" stopColor="#064e3b" />
                 </linearGradient>
               </defs>
