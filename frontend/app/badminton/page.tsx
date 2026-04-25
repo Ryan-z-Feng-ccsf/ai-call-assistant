@@ -162,7 +162,7 @@ export default function Home() {
     setFeedback(null);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/upload-video`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/badminton/upload-video`, {
         method: 'POST',
         body: formData,
       });
