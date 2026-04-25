@@ -162,7 +162,7 @@ export default function Home() {
     setFeedback(null);
 
     try {
-      const response = await fetch('http://127.0.0.1:8001/upload-video', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/upload-video`, {
         method: 'POST',
         body: formData,
       });
