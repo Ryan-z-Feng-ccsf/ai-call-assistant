@@ -17,10 +17,13 @@ export function useTheme() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-    document.documentElement.setAttribute("data-theme", theme);
+    document.documentElement.dataset.theme = theme;
     localStorage.setItem("app-theme", theme);
   }, [theme]);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const toggleTheme = () =>
     setTheme(t => t === "cyber" ? "dark" : t === "dark" ? "light" : "cyber");
